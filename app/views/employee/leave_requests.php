@@ -1,3 +1,4 @@
+
 <?php
 
 include('../../../config/config.php');
@@ -53,3 +54,116 @@ $conn->close();
             </ul>
         </div>
     </nav>
+  
+    <div class="container mt-4">
+        <header>
+            <h3 class="mb-4">
+                Requests Of Leave    
+            <!-- Welcome, <?php echo htmlspecialchars($username); ?>! -->
+            </h3>
+        </header>
+
+        <div class="mb-3">
+            <input class="form-control" id="searchInput" type="text" placeholder="Search...">
+        </div>
+
+        <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requests of Leave</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #fff;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        button {
+            padding: 8px 12px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 0 5px;
+        }
+        .view-btn {
+            background-color: #17a2b8;
+            color: white;
+        }
+        .accept-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        .reject-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Requests of Leave</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Employee Name</th>
+                <th>Leave Type</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1</td>
+                <td>John Doe</td>
+                <td>Annual Leave</td>
+                <td>2024-09-05</td>
+                <td>2024-09-10</td>
+                <td>
+                    <button class="view-btn">View Request</button>
+                    <button class="accept-btn">Accept</button>
+                    <button class="reject-btn">Reject</button>
+                </td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>Jane Smith</td>
+                <td>Sick Leave</td>
+                <td>2024-09-07</td>
+                <td>2024-09-09</td>
+                <td>
+                    <button class="view-btn">View Request</button>
+                    <button class="accept-btn">Accept</button>
+                    <button class="reject-btn">Reject</button>
+                </td>
+            </tr>
+            <!-- Add more rows as needed -->
+        </tbody>
+    </table>
+
+</body>
+</html>
