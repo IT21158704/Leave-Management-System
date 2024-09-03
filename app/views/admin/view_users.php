@@ -35,10 +35,10 @@ $username = $_SESSION['username'];
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
-                <li class="nav-item active">
+                <li class="nav-item">
                     <a class="nav-link" href="admin_dashboard.php">Home</a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item active">
                     <a class="nav-link" href="view_users.php">View Users</a>
                 </li>
                 <li class="nav-item">
