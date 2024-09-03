@@ -23,9 +23,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stmt->bind_param("ssssss", $name, $designation, $dept, $username, $password, $role);
 
     if ($stmt->execute()) {
-        echo '<div class="alert alert-success" role="alert">Registration successful!</div>';
+        echo '<div class="alert alert-success alert-dismissible fade show" role="alert">Registration successful!
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button></div>';
     } else {
-        echo '<div class="alert alert-danger" role="alert">Error: ' . $stmt->error . '</div>';
+        echo '<div class="alert alert-danger alert-dismissible fade show" role="alert">Error: ' . $stmt->error . '<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button></div>';
     }
     $stmt->close();
 }
@@ -83,13 +88,13 @@ $conn->close();
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
-                <li class="nav-item active">
+                <li class="nav-item">
                     <a class="nav-link" href="#">Home</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="view_users.php">View Users</a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item active">
                     <a class="nav-link" href="add_user.php">Add User</a>
                 </li>
                 <li class="nav-item">
@@ -110,22 +115,22 @@ $conn->close();
 
         <!-- Registration Form -->
         <form method="post" action="" class="needs-validation" novalidate>
-                <div class="form-group">
-                    <label for="name">Name</label>
-                    <input type="text" class="form-control" id="name" name="name" required>
-                    <div class="invalid-feedback">Please enter the name.</div>
-                </div>
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" class="form-control" id="name" name="name" required>
+                <div class="invalid-feedback">Please enter the name.</div>
+            </div>
             <div class="form-row">
                 <div class="form-group col-md-6">
                     <label for="designation">Designation</label>
                     <input type="text" class="form-control" id="designation" name="designation" required>
                     <div class="invalid-feedback">Please enter the designation.</div>
                 </div>
-            <div class="form-group col-md-6">
-                <label for="dept">Ministry/Dept.</label>
-                <input type="text" class="form-control" id="dept" name="dept" required>
-                <div class="invalid-feedback">Please enter the ministry or department.</div>
-            </div>
+                <div class="form-group col-md-6">
+                    <label for="dept">Ministry/Dept.</label>
+                    <input type="text" class="form-control" id="dept" name="dept" required>
+                    <div class="invalid-feedback">Please enter the ministry or department.</div>
+                </div>
             </div>
             <div class="form-row">
                 <div class="form-group col-md-6">

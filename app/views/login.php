@@ -76,7 +76,7 @@ $conn->close();
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css">
     <style>
         body {
-            background-image: url('background_image.jpg');
+            background-image: url('../assets//images/bg.jpg');
             background-size: cover;
             background-repeat: no-repeat;
             background-position: center;

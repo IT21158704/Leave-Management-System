@@ -26,6 +26,19 @@ if ($result->num_rows > 0) {
     die("Record not found");
 }
 
+// Fetch existing data
+$query = "SELECT * FROM available_leaves WHERE user_id = ?";
+$stmt = $conn->prepare($query);
+$stmt->bind_param("i", $id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows > 0) {
+    $avLeaves = $result->fetch_assoc();
+} else {
+    die("Record not found");
+}
+
 $currentDate = date("Y-m-d");
 
 // Fetch all employees for the Replacement dropdown
@@ -38,13 +51,11 @@ $officer_result = $conn->query($officer_query);
 $supervisor_query = "SELECT id, name FROM users WHERE role = 'Supervising Officer'";
 $supervisor_result = $conn->query($supervisor_query);
 
-$conn->close();
-
 ?>
 
 <head>
     <meta charset="UTF-8">
-    <title>Employee Dashboard</title>
+    <title>Application For Leave</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" /> <!-- Select2 CSS -->
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
@@ -92,10 +103,10 @@ $conn->close();
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
-                <li class="nav-item active">
+                <li class="nav-item">
                     <a class="nav-link" href="employee_dashboard.php">Home</a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item active">
                     <a class="nav-link" href="leave_application.php">Leave Application</a>
                 </li>
                 <li class="nav-item">
@@ -122,18 +133,15 @@ $conn->close();
             <div class="form-group">
                 <label for="name">Name</label>
                 <input type="text" class="form-control" id="name" name="name" value="<?php echo htmlspecialchars($row['name']); ?>" disabled required>
-                <div class="invalid-feedback">Please enter the name.</div>
             </div>
             <div class="form-row">
                 <div class="form-group col-md-6">
                     <label for="designation">Designation</label>
                     <input type="text" class="form-control" id="designation" name="designation" value="<?php echo htmlspecialchars($row['designation']); ?>" disabled required>
-                    <div class="invalid-feedback">Please enter the designation.</div>
                 </div>
                 <div class="form-group col-md-6">
                     <label for="dept">Ministry/Dept.</label>
-                    <input type="text" class="form-control" id="dept" name="dept" value="<?php echo htmlspecialchars($row['dept']); ?>" disabled  required>
-                    <div class="invalid-feedback">Please enter the ministry or department.</div>
+                    <input type="text" class="form-control" id="dept" name="dept" value="<?php echo htmlspecialchars($row['dept']); ?>" disabled required>
                 </div>
             </div>
 
@@ -141,109 +149,108 @@ $conn->close();
                 <div class="form-group col-md-6">
                     <label for="designation">Date</label>
                     <input type="date" id="date" class="form-control" name="date" value="<?php echo $currentDate; ?>" disabled>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="leaveDates">Number of days leave applied for</label>
+                    <input type="number" id="leaveDates" class="form-control" name="leaveDates" required>
+                    <div class="invalid-feedback">Please enter the number of days leave applied for.</div>
+                </div>
+
+                <!-- <small id="passwordHelpBlock" class="form-text text-muted"> Your  </small> -->
+                <div class="form-group col-md-6">
+                    <label for="availableLeaves">Available leaves for current year</label>
+                    <input type="text" id="availableLeaves" class="form-control" name="availableLeaves" value="Casual - <?php echo htmlspecialchars($avLeaves['casual_leaves']); ?>    |   Rest - <?php echo htmlspecialchars($avLeaves['rest_leaves']); ?>" disabled>
                     <div class="invalid-feedback">Please enter the designation.</div>
                 </div>
             </div>
 
-
-
-            <div class="form-row">
-                <div class="form-group col-md-6">
-                    <label for="dept">Number of days leave applied for</label>
-                    <input type="number" id="date" class="form-control" name="date">
-                    <div class="invalid-feedback">Please enter the designation.</div>
-                </div>
-                <div class="form-group col-md-6">
-                    <label for="dept">Reason</label>
-                    <div class="form-row">
-                        <div class="col">
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="exampleRadios" id="radio1" value="option1" checked>
-                                <label class="form-check-label" for="radio1">
-                                    Option
-                                </label>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="exampleRadios" id="radio2" value="option2">
-                                <label class="form-check-label" for="radio2">
-                                    Option
-                                </label>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="exampleRadios" id="radio3" value="option3">
-                                <label class="form-check-label" for="radio3">
-                                    Option
-                                </label>
-                            </div>
+            <div class="form-group">
+                <label for="leaveReason">Reason</label>
+                <div class="form-row">
+                    <div class="col">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="leaveReason" id="radio1" value="casual" required>
+                            <label class="form-check-label" for="radio1">
+                                Casual
+                            </label>
                         </div>
                     </div>
-                    <div class="invalid-feedback">Please enter the ministry or department.</div>
+                    <div class="col">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="leaveReason" id="radio2" value="rest" required>
+                            <label class="form-check-label" for="radio2">
+                                Rest
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="leaveReason" id="radio3" value="other" required>
+                            <label class="form-check-label" for="radio3">
+                                Other
+                            </label>
+                        </div>
+                    </div>
                 </div>
-            </div>
-
-            <div class="form-group">
-                <label for="dept">Available leaves for current year</label>
-                <input type="test" id="date" class="form-control" name="date">
-                <div class="invalid-feedback">Please enter the designation.</div>
+                <div class="invalid-feedback">Please enter the reason.</div>
             </div>
 
             <div class="form-row">
                 <div class="form-group col-md-6">
-                    <label for="designation">Date of First Appoinment</label>
-                    <input type="date" class="form-control" id="designation" name="designation" required>
-                    <div class="invalid-feedback">Please enter the designation.</div>
+                    <label for="firstAppointmentDate">Date of First Appoinment</label>
+                    <input type="date" class="form-control" id="firstAppointmentDate" name="firstAppointmentDate" required>
+                    <div class="invalid-feedback">Please enter the date of first appoinment.</div>
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group col-md-6">
-                    <label for="designation">Date of commencing leave</label>
-                    <input type="date" class="form-control" id="designation" name="designation" required>
-                    <div class="invalid-feedback">Please enter the designation.</div>
+                    <label for="commenceLeaveDate ">Date of Commencing Leave</label>
+                    <input type="date" class="form-control" id="commenceLeaveDate" name="commenceLeaveDate" required>
+                    <div class="invalid-feedback">Please enter the date of commencing leave.</div>
                 </div>
                 <div class="form-group col-md-6">
-                    <label for="dept">Date of resuming duties</label>
-                    <input type="date" class="form-control" id="dept" name="dept" required>
-                    <div class="invalid-feedback">Please enter the ministry or department.</div>
+                    <label for="resumeDate">Date of Resumption</label>
+                    <input type="date" class="form-control" id="resumeDate" name="resumeDate" required>
+                    <div class="invalid-feedback">Please enter the date of resuming duties.</div>
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="dept">Reasons for leave</label>
-                <textarea class="form-control" id="exampleTextarea" rows="1" placeholder="Type your message here..."></textarea>
-                <div class="invalid-feedback">Please enter the designation.</div>
+                <label for="fullReason">Reasons for leave</label>
+                <textarea class="form-control" id="fullReason" name="fullReason" rows="1" placeholder="Type your message here..." required></textarea>
+                <div class="invalid-feedback">Please enter the reasons for leave.</div>
             </div>
 
             <div class="form-group">
-                <label for="dept">Address when on leave</label>
-                <textarea class="form-control" id="exampleTextarea" rows="2" placeholder="Type your message here..."></textarea>
-                <div class="invalid-feedback">Please enter the designation.</div>
+                <label for="addressDuringLeave">Address During Leave</label>
+                <textarea class="form-control" id="addressDuringLeave" name="addressDuringLeave" rows="2" placeholder="Type your message here..." required></textarea>
+                <div class="invalid-feedback">Please enter the address During Leave.</div>
             </div>
 
             <div class="form-group">
-                <label for="role">Replacement</label>
-                <select class="form-control" id="role" name="role" required>
-                    <option value="">Select a replacement</option>
-                        <?php
-                        if ($employees_result->num_rows > 0) {
-                            while ($employee = $employees_result->fetch_assoc()) {
-                                echo '<option value="' . htmlspecialchars($employee['id']) . '">' . htmlspecialchars($employee['name']) . '</option>';
-                            }
+                <label for="replacement">Name of Employee Who Will Act as Replacement</label>
+                <select class="form-control" id="replacement" name="replacement" required>
+                    <option value="">Select an Employee Who Will Act as Replacement</option>
+                    <?php
+                    if ($employees_result->num_rows > 0) {
+                        while ($employee = $employees_result->fetch_assoc()) {
+                            echo '<option value="' . htmlspecialchars($employee['id']) . '">' . htmlspecialchars($employee['name']) . '</option>';
                         }
-                        ?>
+                    }
+                    ?>
                 </select>
-                <div class="invalid-feedback">Please select a role.</div>
+                <div class="invalid-feedback">Please select a replacement.</div>
             </div>
 
 
             <div class="form-row">
                 <div class="form-group col-md-6">
-                    <label for="designation">Officer Acting</label>
-                    <select class="form-control" id="role" name="role" required>
+                    <label for="actingOfficer">Officer Acting</label>
+                    <select class="form-control" id="actingOfficer" name="actingOfficer" required>
                         <option value="none">None</option>
                         <?php
                         if ($officer_result->num_rows > 0) {
@@ -253,11 +260,11 @@ $conn->close();
                         }
                         ?>
                     </select>
-                    <div class="invalid-feedback">Please enter the designation.</div>
+                    <div class="invalid-feedback">Please select an Officer Acting.</div>
                 </div>
                 <div class="form-group col-md-6">
-                    <label for="dept">Supervising Officer</label>
-                    <select class="form-control" id="role" name="role" required>
+                    <label for="supervisingOfficer">Supervising Officer</label>
+                    <select class="form-control" id="supervisingOfficer" name="supervisingOfficer" required>
                         <option value="none">None</option>
                         <?php
                         if ($supervisor_result->num_rows > 0) {
@@ -267,10 +274,10 @@ $conn->close();
                         }
                         ?>
                     </select>
-                    <div class="invalid-feedback">Please enter the ministry or department.</div>
+                    <div class="invalid-feedback">Please select a Supervising Officer.</div>
                 </div>
             </div>
-            
+
             <button type="reset" class="btn btn-secondary float-right ml-2">Reset</button>
             <button type="submit" class="btn btn-primary float-right">Submit</button>
         </form>
@@ -293,13 +300,75 @@ $conn->close();
                 });
             }, false);
         })();
-        
+
         $(document).ready(function() {
             $('#replacement').select2({
                 placeholder: "Select a replacement",
                 allowClear: true
             });
+            $('#Acting Officer').select2({
+                placeholder: "Select a Acting Officer",
+                allowClear: true
+            });
+            $('#Supervising Officer').select2({
+                placeholder: "Select a Supervising Officer",
+                allowClear: true
+            });
         });
-        
     </script>
 </body>
+
+<?php
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Employee') {
+        header("Location: ../logout.php");
+        exit();
+    }
+
+    $user_id = $_SESSION['user_id'];
+    $leaveDates = $_POST['leaveDates'];
+    $leaveReason = $_POST['leaveReason'];
+    $firstAppointmentDate = $_POST['firstAppointmentDate'];
+    $commenceLeaveDate = $_POST['commenceLeaveDate'];
+    $resumeDate = $_POST['resumeDate'];
+    $replacement = $_POST['replacement'];
+    $addressDuringLeave = $_POST['addressDuringLeave'];
+    $contactDuringLeave = $_POST['contactDuringLeave'] ?? ''; // Optional field
+    $actingOfficer = $_POST['actingOfficer'];
+    $supervisingOfficer = $_POST['supervisingOfficer'];
+    $fullReason = $_POST['fullReason'];
+    $submissionDate = date('Y-m-d H:i:s');
+
+    // Validate required fields
+    if (empty($leaveDates) || empty($leaveReason) || empty($firstAppointmentDate) || empty($commenceLeaveDate) || empty($resumeDate) || empty($addressDuringLeave) || empty($actingOfficer) || empty($supervisingOfficer) || empty($fullReason)) {
+        die("Please fill in all required fields.");
+    }
+
+    // Prepare the SQL statement
+    $query = "INSERT INTO leave_applications (user_id, leaveDates, leaveReason, firstAppointmentDate, commenceLeaveDate, resumeDate, replacement, addressDuringLeave, contactDuringLeave, actingOfficer, supervisingOfficer, submissionDate, fullReason, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
+
+    if ($stmt = $conn->prepare($query)) {
+        $stmt->bind_param("iissssssssss", $user_id, $leaveDates, $leaveReason, $firstAppointmentDate, $commenceLeaveDate, $resumeDate, $replacement, $addressDuringLeave, $contactDuringLeave, $actingOfficer, $supervisingOfficer, $submissionDate, $fullReason);
+
+        if ($stmt->execute()) {
+            echo "Leave application submitted successfully!";
+        } else {
+            echo "Error: " . $stmt->error;
+        }
+
+        $stmt->close();
+    } else {
+        echo "Error: " . $conn->error;
+    }
+
+    $conn->close();
+} 
+
+$conn->close();
+
+?>
