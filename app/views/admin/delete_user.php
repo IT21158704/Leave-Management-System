@@ -9,7 +9,7 @@ $stmt = $conn->prepare($deleteQuery);
 $stmt->bind_param("i", $id);
 
 if ($stmt->execute()) {
-    header("Location: ../dashboard.php"); // Redirect to the page where the table is displayed
+    header("Location: view_users.php"); // Redirect to the page where the table is displayed
     exit();
 } else {
     echo "Delete failed";
