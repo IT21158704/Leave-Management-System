@@ -38,149 +38,182 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 $conn->close();
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <title>User Registration</title>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="../../assets/vendors/feather/feather.css">
+    <link rel="stylesheet" href="../../assets/vendors/ti-icons/css/themify-icons.css">
+    <link rel="stylesheet" href="../../assets/vendors/css/vendor.bundle.base.css">
+    <link rel="stylesheet" href="../../assets/vendors/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../../assets/vendors/mdi/css/materialdesignicons.min.css">
+    <link rel="stylesheet" href="../../assets/vendors/datatables.net-bs5/dataTables.bootstrap5.css">
+    <link rel="stylesheet" href="../../assets/vendors/ti-icons/css/themify-icons.css">
+    <link rel="stylesheet" type="text/css" href="../../assets/js/select.dataTables.min.css">
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="shortcut icon" href="../../assets/images/favicon.png" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-
-        .container {
-            max-width: 600px;
-            margin-top: 50px;
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-
-        h1 {
-            font-size: 24px;
-            margin-bottom: 30px;
-        }
-
-        .btn-primary {
-            background-color: #007bff;
-            border-color: #007bff;
-        }
-
-        .btn-secondary {
-            background-color: #6c757d;
-            border-color: #6c757d;
-        }
-    </style>
 </head>
 
 <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <a class="navbar-brand" href="#">Admin Dashboard</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ml-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Home</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="view_users.php">View Users</a>
-                </li>
-                <li class="nav-item active">
-                    <a class="nav-link" href="add_user.php">Add User</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="../logout.php">Logout</a>
-                </li>
+    <!-- partial:partials/_navbar.html -->
+    <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
+        <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-start">
+            <a class="navbar-brand brand-logo me-5" href="#"><img src="../../assets/images/logo.svg" class="me-2"
+                    alt="logo" /></a>
+            <a class="navbar-brand brand-logo-mini" href="#"><img src="../../assets/images/logo-mini.svg" alt="logo" /></a>
+        </div>
+        <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
+            <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize">
+                <span class="icon-menu"></span>
+            </button>
+
+            <ul class="navbar-nav navbar-nav-right">
             </ul>
+            <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button" data-toggle="offcanvas">
+                <span class="icon-menu"></span>
+            </button>
         </div>
     </nav>
+    <!-- partial -->
+    <div class="container-fluid page-body-wrapper">
+        <!-- partial:partials/_sidebar.html -->
+        <nav class="sidebar sidebar-offcanvas" id="sidebar">
+            <ul class="nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="admin_dashboard.php">
+                        <i class="icon-grid menu-icon"></i>
+                        <span class="menu-title">Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="view_users.php">
+                        <i class="icon-grid menu-icon"></i>
+                        <span class="menu-title">View Users</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="add_user.php">
+                        <i class="icon-grid menu-icon"></i>
+                        <span class="menu-title">Add Users</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="../logout.php">
+                        <i class="icon-grid menu-icon"></i>
+                        <span class="menu-title">Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <!-- partial -->
+        <div class="main-panel">
+            <div class="content-wrapper">
+                <header>
+                    <h3 class="mb-4">
+                        Register New User
+                        <!-- Welcome, <?php echo htmlspecialchars($username); ?>! -->
+                    </h3>
+                </header>
 
 
-    <div class="container mt-4">
-        <header>
-            <h1 class="mb-4">
-                Register New User
-                <!-- Welcome, <?php echo htmlspecialchars($username); ?>! -->
-            </h1>
-        </header>
-
-        <!-- Registration Form -->
-        <form method="post" action="" class="needs-validation" novalidate>
-            <div class="form-group">
-                <label for="name">Name</label>
-                <input type="text" class="form-control" id="name" name="name" required>
-                <div class="invalid-feedback">Please enter the name.</div>
+                <!-- Registration Form -->
+                <form method="post" action="" class="needs-validation" novalidate>
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                        <div class="invalid-feedback">Please enter the name.</div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="designation">Designation</label>
+                            <input type="text" class="form-control" id="designation" name="designation" required>
+                            <div class="invalid-feedback">Please enter the designation.</div>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="dept">Ministry/Dept.</label>
+                            <input type="text" class="form-control" id="dept" name="dept" required>
+                            <div class="invalid-feedback">Please enter the ministry or department.</div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="username">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                            <div class="invalid-feedback">Please enter a username.</div>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="password">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                            <div class="invalid-feedback">Please enter a password.</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="role">Role</label>
+                        <select class="form-control" id="role" name="role" required>
+                            <option value="Employee">Employee</option>
+                            <option value="Supervising Officer">Supervising Officer</option>
+                            <option value="Head of Department">Head of Department</option>
+                            <option value="Officer Acting">Officer Acting</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                        <div class="invalid-feedback">Please select a role.</div>
+                    </div>
+                    <!-- <button type="submit" class="btn btn-primary btn-submit float-right">Add User</button> -->
+                    <div class="mt-3">
+                        <a href="view_users.php" class="btn btn-secondary">Back to list</a>
+                        <button type="submit" class="btn btn-primary float-right">Save</button>
+                    </div>
+                </form>
+                <script>
+                    // Bootstrap form validation
+                    (function() {
+                        'use strict';
+                        window.addEventListener('load', function() {
+                            var forms = document.getElementsByClassName('needs-validation');
+                            var validation = Array.prototype.filter.call(forms, function(form) {
+                                form.addEventListener('submit', function(event) {
+                                    if (form.checkValidity() === false) {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                    }
+                                    form.classList.add('was-validated');
+                                }, false);
+                            });
+                        }, false);
+                    })();
+                </script>
             </div>
-            <div class="form-row">
-                <div class="form-group col-md-6">
-                    <label for="designation">Designation</label>
-                    <input type="text" class="form-control" id="designation" name="designation" required>
-                    <div class="invalid-feedback">Please enter the designation.</div>
-                </div>
-                <div class="form-group col-md-6">
-                    <label for="dept">Ministry/Dept.</label>
-                    <input type="text" class="form-control" id="dept" name="dept" required>
-                    <div class="invalid-feedback">Please enter the ministry or department.</div>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group col-md-6">
-                    <label for="username">Username</label>
-                    <input type="text" class="form-control" id="username" name="username" required>
-                    <div class="invalid-feedback">Please enter a username.</div>
-                </div>
-                <div class="form-group col-md-6">
-                    <label for="password">Password</label>
-                    <input type="password" class="form-control" id="password" name="password" required>
-                    <div class="invalid-feedback">Please enter a password.</div>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="role">Role</label>
-                <select class="form-control" id="role" name="role" required>
-                    <option value="Employee">Employee</option>
-                    <option value="Supervising Officer">Supervising Officer</option>
-                    <option value="Head of Department">Head of Department</option>
-                    <option value="Officer Acting">Officer Acting</option>
-                    <option value="Admin">Admin</option>
-                </select>
-                <div class="invalid-feedback">Please select a role.</div>
-            </div>
-            <!-- <button type="submit" class="btn btn-primary btn-submit float-right">Add User</button> -->
-            <div class="mt-3">
-                <a href="view_users.php" class="btn btn-secondary">Back to list</a>
-                <button type="submit" class="btn btn-primary float-right">Save</button>
-            </div>
-        </form>
+            <!-- partial -->
+        </div>
+        <!-- main-panel ends -->
     </div>
-
-    <script>
-        // Bootstrap form validation
-        (function() {
-            'use strict';
-            window.addEventListener('load', function() {
-                var forms = document.getElementsByClassName('needs-validation');
-                var validation = Array.prototype.filter.call(forms, function(form) {
-                    form.addEventListener('submit', function(event) {
-                        if (form.checkValidity() === false) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                        }
-                        form.classList.add('was-validated');
-                    }, false);
-                });
-            }, false);
-        })();
-    </script>
+    <!-- page-body-wrapper ends -->
+    </div>
+    <!-- container-scroller -->
+    <!-- plugins:js -->
+    <script src="../../assets/vendors/js/vendor.bundle.base.js"></script>
+    <!-- endinject -->
+    <!-- Plugin js for this page -->
+    <script src="../../assets/vendors/chart.js/chart.umd.js"></script>
+    <script src="../../assets/vendors/datatables.net/jquery.dataTables.js"></script>
+    <script src="../../assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js"></script>
+    <script src="../../assets/js/dataTables.select.min.js"></script>
+    <!-- End plugin js for this page -->
+    <!-- inject:js -->
+    <script src="../../assets/js/off-canvas.js"></script>
+    <script src="../../assets/js/template.js"></script>
+    <script src="../../assets/js/settings.js"></script>
+    <script src="../../assets/js/todolist.js"></script>
+    <!-- endinject -->
+    <!-- Custom js for this page-->
+    <script src="../../assets/js/jquery.cookie.js" type="text/javascript"></script>
+    <script src="../../assets/js/dashboard.js"></script>
+    <!-- End custom js for this page-->
 </body>
 
 </html>
