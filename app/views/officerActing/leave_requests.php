@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Employee') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Officer Acting') {
     header("Location: ../login.php");
     exit();
 }
@@ -66,21 +66,9 @@ $user_id = $_SESSION['user_id'];
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
                 <li class="nav-item">
-                    <a class="nav-link" href="employee_dashboard.php">
+                    <a class="nav-link" href="officer_acting_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="leave_application.php">
-                        <i class="icon-grid menu-icon"></i>
-                        <span class="menu-title">Leave Application</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="leave_application_history.php">
-                        <i class="icon-grid menu-icon"></i>
-                        <span class="menu-title">Leave History</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -121,8 +109,12 @@ $user_id = $_SESSION['user_id'];
     FROM leave_applications la
     JOIN users u ON la.user_id = u.id
     JOIN users s ON la.supervisingOfficer = s.id
-    WHERE la.replacement = '$user_id' AND la.status = 'pending'
+    JOIN request_status rs ON la.id = rs.leave_application_id
+    WHERE la.actingOfficer = '$user_id'
+    AND la.status = 'pending'
+    AND rs.acting_officer_status = 'pending'
 ";
+
                 $result = $conn->query($query);
                 if (!$result) {
                     echo "Error: " . $conn->error;
@@ -186,12 +178,6 @@ $user_id = $_SESSION['user_id'];
                         trs[i].style.display = match ? '' : 'none';
                     }
                 });
-
-                function confirmDelete(id) {
-                    if (confirm("Are you sure you want to delete this record?")) {
-                        window.location.href = 'delete_user.php?id=' + id;
-                    }
-                }
             </script>
         </div>
         <!-- partial -->

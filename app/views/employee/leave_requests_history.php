@@ -12,9 +12,6 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Employee') {
 }
 
 $user_id = $_SESSION['user_id'];
-
-
-
 ?>
 
 
@@ -101,61 +98,53 @@ $user_id = $_SESSION['user_id'];
         <div class="main-panel">
             <div class="content-wrapper">
                 <header>
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3>Leave Requests List</h3>
-                        <a href="leave_requests_history.php" class="btn btn-primary">History</a>
-                    </div>
+                    <h3 class="mb-4">
+                        Leave Requests History
+                    </h3>
                 </header>
 
                 <?php
-                if (!isset($_GET['status'])) {
-                } else {
-                    echo '<div class="alert alert-success" role="alert">Record Updated!.</div>';
-                }
-                ?>
-
-                <?php
-                // Fetch data from database with JOIN to get the name from users table and supervisingOfficer name
-                $query = "
-    SELECT la.*, u.name AS user_name, s.name AS supervising_officer_name
-    FROM leave_applications la
-    JOIN users u ON la.user_id = u.id
-    JOIN users s ON la.supervisingOfficer = s.id
-    WHERE la.replacement = '$user_id' AND la.status = 'pending'
-";
+                // Fetch data from database
+                $query = "SELECT * FROM leave_applications WHERE replacement = $user_id AND status != 'pending'";
                 $result = $conn->query($query);
-                if (!$result) {
-                    echo "Error: " . $conn->error;
-                }
 
                 if ($result->num_rows > 0) {
                     echo '<div class="table-responsive">';
                     echo '<table class="table table-striped table-hover table-bordered" id="userTable">';
                     echo '<thead class="thead-dark">
-            <tr>
-                <th scope="col">ID</th>
-                <th scope="col">Name</th>
-                <th scope="col">Leave Dates</th>
-                <th scope="col">Commence Leave Date</th>
-                <th scope="col">Resume Date</th>
-                <th scope="col">Supervising Officer</th>
-                <th scope="col">Action</th>
-            </tr>
-          </thead>
-          <tbody>';
+    <tr>
+        <th scope="col">Leave ID</th>
+        <th scope="col">Date</th>
+        <th scope="col">Number of days</th>
+        <th scope="col">Reason / Dept</th>
+        <th scope="col">Status</th>
+        <th scope="col"></th>
+    </tr>
+  </thead>
+  <tbody>';
 
                     while ($row = $result->fetch_assoc()) {
                         echo '<tr>
-                <td>' . htmlspecialchars($row['id']) . '</td>
-                <td>' . htmlspecialchars($row['user_name']) . '</td> <!-- Display the user name -->
-                <td>' . htmlspecialchars($row['leaveDates']) . '</td>
-                <td>' . htmlspecialchars($row['commenceLeaveDate']) . '</td>
-                <td>' . htmlspecialchars($row['resumeDate']) . '</td>
-                <td>' . htmlspecialchars($row['supervising_officer_name']) . '</td> <!-- Display the supervising officer name -->
-                <td>
-                    <a class="btn btn-primary btn-sm" href="view_request.php?id=' . htmlspecialchars($row['id']) . '">View Details</a>
-                </td>
-              </tr>';
+        <td>' . htmlspecialchars($row['id']) . '</td>
+        <td>' . htmlspecialchars($row['submissionDate']) . '</td>
+        <td>' . htmlspecialchars($row['leaveDates']) . '</td>
+        <td>' . htmlspecialchars($row['leaveReason']) . '</td>
+        <td>';
+
+                        // Display different badge colors based on status
+                        if ($row['status'] == 'pending') {
+                            echo '<label class="badge badge-warning">' . htmlspecialchars($row['status']) . '</label>';
+                        } elseif ($row['status'] == 'approved') {
+                            echo '<label class="badge badge-success">' . htmlspecialchars($row['status']) . '</label>';
+                        } elseif ($row['status'] == 'rejected') {
+                            echo '<label class="badge badge-danger">' . htmlspecialchars($row['status']) . '</label>';
+                        }
+
+                        echo '</td>
+        <td>
+            <a class="btn btn-success btn-sm" href="view_request.php?id=' . htmlspecialchars($row['id']) . '">View</a>
+        </td>
+      </tr>';
                     }
 
                     echo '</tbody></table>';
@@ -164,6 +153,8 @@ $user_id = $_SESSION['user_id'];
                     echo '<div class="alert alert-warning" role="alert">No records found.</div>';
                 }
                 ?>
+
+
             </div>
 
             <script>
