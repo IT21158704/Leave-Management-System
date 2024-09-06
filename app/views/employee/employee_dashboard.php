@@ -27,6 +27,7 @@ if ($result->num_rows > 0) {
 }
 
 $currentDate = date("Y-m-d");
+$currentTime = date("h:i:s A");
 
 ?>
 
@@ -34,7 +35,7 @@ $currentDate = date("Y-m-d");
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Admin Dashboard</title>
+    <title><?php echo htmlspecialchars($_SESSION['role']); ?></title>
     <link rel="stylesheet" href="../../assets/vendors/feather/feather.css">
     <link rel="stylesheet" href="../../assets/vendors/ti-icons/css/themify-icons.css">
     <link rel="stylesheet" href="../../assets/vendors/css/vendor.bundle.base.css">
@@ -89,6 +90,12 @@ $currentDate = date("Y-m-d");
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="leave_application_history.php">
+                        <i class="icon-grid menu-icon"></i>
+                        <span class="menu-title">Leave History</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="leave_requests.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Leave Requests</span>
@@ -114,7 +121,7 @@ $currentDate = date("Y-m-d");
                             <div class="col-12 col-xl-4">
                                 <div class="justify-content-end d-flex">
                                     <div class="dropdown flex-md-grow-1 flex-xl-grow-0">
-                                        <button class="btn btn-sm btn-light bg-white" type="button" id="dropdownMenuDate2">
+                                        <button class="btn btn-light bg-white" type="button">
                                             <i class="mdi mdi-calendar"></i> <?php echo $currentDate; ?> </button>
                                     </div>
                                 </div>

@@ -6,12 +6,12 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Admin') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Officer Acting') {
     header("Location: ../login.php");
     exit();
 }
 
-$username = $_SESSION['username'];
+$user_id = $_SESSION['user_id'];
 ?>
 
 
@@ -63,21 +63,15 @@ $username = $_SESSION['username'];
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
                 <li class="nav-item">
-                    <a class="nav-link" href="admin_dashboard.php">
+                    <a class="nav-link" href="officer_acting_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
-                        <span class="menu-title">Dashboard</span>
+                        <span class="menu-title">Home</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="view_users.php">
+                    <a class="nav-link" href="leave_requests.php">
                         <i class="icon-grid menu-icon"></i>
-                        <span class="menu-title">View Users</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="add_user.php">
-                        <i class="icon-grid menu-icon"></i>
-                        <span class="menu-title">Add Users</span>
+                        <span class="menu-title">Leave Requests</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -93,57 +87,90 @@ $username = $_SESSION['username'];
             <div class="content-wrapper">
                 <header>
                     <h3 class="mb-4">
-                        Registered Users
-                        <!-- Welcome, <?php echo htmlspecialchars($username); ?>! -->
+                        Leave Requests History
                     </h3>
                 </header>
 
-                <div class="mb-3">
-                    <input class="form-control" id="searchInput" type="text" placeholder="Search...">
-                </div>
-
                 <?php
-                // Fetch data from database
-                $query = "SELECT * FROM users";
-                $result = $conn->query($query);
+                // Prepare SQL query with a prepared statement to avoid SQL injection
+                $query = "
+                SELECT la.id, la.submissionDate, la.leaveDates, la.leaveReason, la.status
+                FROM leave_applications la
+                JOIN request_status rs ON rs.leave_application_id = la.id
+                WHERE la.actingOfficer = ? 
+                AND rs.acting_officer_status != 'Pending'
+            ";
 
-                if ($result->num_rows > 0) {
-                    echo '<div class="table-responsive">';
-                    echo '<table class="table table-striped table-hover table-bordered" id="userTable">';
-                    echo '<thead class="thead-dark">
-                    <tr>
-                        <th scope="col">ID</th>
-                        <th scope="col">Name</th>
-                        <th scope="col">Designation</th>
-                        <th scope="col">Ministry / Dept</th>
-                        <th scope="col">Username</th>
-                        <th scope="col">Role</th>
-                        <th scope="col">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>';
+                // Prepare the statement
+                if ($stmt = $conn->prepare($query)) {
+                    // Bind the user ID to the query
+                    $stmt->bind_param("i", $user_id);
 
-                    while ($row = $result->fetch_assoc()) {
-                        echo '<tr>
-                        <td>' . htmlspecialchars($row['id']) . '</td>
-                        <td>' . htmlspecialchars($row['name']) . '</td>
-                        <td>' . htmlspecialchars($row['designation']) . '</td>
-                        <td>' . htmlspecialchars($row['dept']) . '</td>
-                        <td>' . htmlspecialchars($row['username']) . '</td>
-                        <td>' . htmlspecialchars($row['role']) . '</td>
-                        <td>
-                            <a class="btn btn-primary btn-sm" href="update_user.php?id=' . htmlspecialchars($row['id']) . '">Edit</a> 
-                            <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete(' . htmlspecialchars($row['id']) . ')">Delete</a>
-                        </td>
-                      </tr>';
+                    // Execute the query
+                    $stmt->execute();
+
+                    // Get the result
+                    $result = $stmt->get_result();
+
+                    // Check if there are any rows
+                    if ($result->num_rows > 0) {
+                        echo '<div class="table-responsive">';
+                        echo '<table class="table table-striped table-hover table-bordered" id="userTable">';
+                        echo '<thead class="thead-dark">
+                            <tr>
+                                <th scope="col">Leave ID</th>
+                                <th scope="col">Date</th>
+                                <th scope="col">Number of days</th>
+                                <th scope="col">Reason / Dept</th>
+                                <th scope="col">Status</th>
+                                <th scope="col"></th>
+                            </tr>
+                          </thead>
+                          <tbody>';
+
+                        // Fetch and display each row
+                        while ($row = $result->fetch_assoc()) {
+                            echo '<tr>
+                            <td>' . htmlspecialchars($row['id']) . '</td>
+                            <td>' . htmlspecialchars($row['submissionDate']) . '</td>
+                            <td>' . htmlspecialchars($row['leaveDates']) . '</td>
+                            <td>' . htmlspecialchars($row['leaveReason']) . '</td>
+                            <td>';
+
+                            // Display status with appropriate badge color
+                            switch ($row['status']) {
+                                case 'approved':
+                                    echo '<label class="badge badge-success">' . htmlspecialchars($row['status']) . '</label>';
+                                    break;
+                                case 'rejected':
+                                    echo '<label class="badge badge-danger">' . htmlspecialchars($row['status']) . '</label>';
+                                    break;
+                                default:
+                                    echo '<label class="badge badge-warning">' . htmlspecialchars($row['status']) . '</label>';
+                                    break;
+                            }
+
+                            echo '</td>
+                            <td>
+                                <a class="btn btn-success btn-sm" href="view_request_status.php?id=' . htmlspecialchars($row['id']) . '">View</a>
+                            </td>
+                          </tr>';
+                        }
+
+                        echo '</tbody></table>';
+                        echo '</div>';
+                    } else {
+                        echo '<div class="alert alert-warning" role="alert">No records found.</div>';
                     }
 
-                    echo '</tbody></table>';
-                    echo '</div>';
+                    // Close the statement
+                    $stmt->close();
                 } else {
-                    echo '<div class="alert alert-warning" role="alert">No records found.</div>';
+                    // Display an error message if the query fails
+                    echo '<div class="alert alert-danger" role="alert">Error: ' . $conn->error . '</div>';
                 }
                 ?>
+
 
             </div>
 

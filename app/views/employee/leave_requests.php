@@ -11,7 +11,10 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Employee') {
     exit();
 }
 
-$username = $_SESSION['username'];
+$user_id = $_SESSION['user_id'];
+
+
+
 ?>
 
 
@@ -19,7 +22,7 @@ $username = $_SESSION['username'];
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Admin Dashboard</title>
+    <title><?php echo htmlspecialchars($_SESSION['role']); ?></title>
     <link rel="stylesheet" href="../../assets/vendors/feather/feather.css">
     <link rel="stylesheet" href="../../assets/vendors/ti-icons/css/themify-icons.css">
     <link rel="stylesheet" href="../../assets/vendors/css/vendor.bundle.base.css">
@@ -75,6 +78,12 @@ $username = $_SESSION['username'];
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="leave_application_history.php">
+                        <i class="icon-grid menu-icon"></i>
+                        <span class="menu-title">Leave History</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="leave_requests.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Leave Requests</span>
@@ -92,49 +101,61 @@ $username = $_SESSION['username'];
         <div class="main-panel">
             <div class="content-wrapper">
                 <header>
-                    <h3 class="mb-4">
-                        Leave Requests List
-                    </h3>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3>Leave Requests List</h3>
+                        <a href="leave_requests_history.php" class="btn btn-primary">History</a>
+                    </div>
                 </header>
 
-                <div class="mb-3">
-                    <input class="form-control" id="searchInput" type="text" placeholder="Search...">
-                </div>
+                <?php
+                if (!isset($_GET['status'])) {
+                } else {
+                    echo '<div class="alert alert-success" role="alert">Record Updated!.</div>';
+                }
+                ?>
 
                 <?php
-                // Fetch data from database
-                $query = "SELECT * FROM users";
+                // Fetch data from database with JOIN to get the name from users table and supervisingOfficer name
+                $query = "
+    SELECT la.*, u.name AS user_name, s.name AS supervising_officer_name
+    FROM leave_applications la
+    JOIN users u ON la.user_id = u.id
+    JOIN users s ON la.supervisingOfficer = s.id
+    WHERE la.replacement = '$user_id' AND la.status = 'pending'
+";
                 $result = $conn->query($query);
+                if (!$result) {
+                    echo "Error: " . $conn->error;
+                }
 
                 if ($result->num_rows > 0) {
                     echo '<div class="table-responsive">';
                     echo '<table class="table table-striped table-hover table-bordered" id="userTable">';
                     echo '<thead class="thead-dark">
-                    <tr>
-                        <th scope="col">ID</th>
-                        <th scope="col">Name</th>
-                        <th scope="col">Designation</th>
-                        <th scope="col">Ministry / Dept</th>
-                        <th scope="col">Username</th>
-                        <th scope="col">Role</th>
-                        <th scope="col">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>';
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">Name</th>
+                <th scope="col">Leave Dates</th>
+                <th scope="col">Commence Leave Date</th>
+                <th scope="col">Resume Date</th>
+                <th scope="col">Supervising Officer</th>
+                <th scope="col">Action</th>
+            </tr>
+          </thead>
+          <tbody>';
 
                     while ($row = $result->fetch_assoc()) {
                         echo '<tr>
-                        <td>' . htmlspecialchars($row['id']) . '</td>
-                        <td>' . htmlspecialchars($row['name']) . '</td>
-                        <td>' . htmlspecialchars($row['designation']) . '</td>
-                        <td>' . htmlspecialchars($row['dept']) . '</td>
-                        <td>' . htmlspecialchars($row['username']) . '</td>
-                        <td>' . htmlspecialchars($row['role']) . '</td>
-                        <td>
-                            <a class="btn btn-primary btn-sm" href="update_user.php?id=' . htmlspecialchars($row['id']) . '">Edit</a> 
-                            <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete(' . htmlspecialchars($row['id']) . ')">Delete</a>
-                        </td>
-                      </tr>';
+                <td>' . htmlspecialchars($row['id']) . '</td>
+                <td>' . htmlspecialchars($row['user_name']) . '</td> <!-- Display the user name -->
+                <td>' . htmlspecialchars($row['leaveDates']) . '</td>
+                <td>' . htmlspecialchars($row['commenceLeaveDate']) . '</td>
+                <td>' . htmlspecialchars($row['resumeDate']) . '</td>
+                <td>' . htmlspecialchars($row['supervising_officer_name']) . '</td> <!-- Display the supervising officer name -->
+                <td>
+                    <a class="btn btn-primary btn-sm" href="view_request.php?id=' . htmlspecialchars($row['id']) . '">View Details</a>
+                </td>
+              </tr>';
                     }
 
                     echo '</tbody></table>';
@@ -143,7 +164,6 @@ $username = $_SESSION['username'];
                     echo '<div class="alert alert-warning" role="alert">No records found.</div>';
                 }
                 ?>
-
             </div>
 
             <script>

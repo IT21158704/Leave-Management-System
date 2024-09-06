@@ -6,12 +6,12 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Admin') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Employee') {
     header("Location: ../login.php");
     exit();
 }
 
-$username = $_SESSION['username'];
+$user_id = $_SESSION['user_id'];
 ?>
 
 
@@ -63,21 +63,27 @@ $username = $_SESSION['username'];
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
                 <li class="nav-item">
-                    <a class="nav-link" href="admin_dashboard.php">
+                    <a class="nav-link" href="employee_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
-                        <span class="menu-title">Dashboard</span>
+                        <span class="menu-title">Home</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="view_users.php">
+                    <a class="nav-link" href="leave_application.php">
                         <i class="icon-grid menu-icon"></i>
-                        <span class="menu-title">View Users</span>
+                        <span class="menu-title">Leave Application</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="add_user.php">
+                    <a class="nav-link" href="leave_application_history.php">
                         <i class="icon-grid menu-icon"></i>
-                        <span class="menu-title">Add Users</span>
+                        <span class="menu-title">Leave History</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_requests.php">
+                        <i class="icon-grid menu-icon"></i>
+                        <span class="menu-title">Leave Requests</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -93,49 +99,52 @@ $username = $_SESSION['username'];
             <div class="content-wrapper">
                 <header>
                     <h3 class="mb-4">
-                        Registered Users
-                        <!-- Welcome, <?php echo htmlspecialchars($username); ?>! -->
+                        Leave Requests History
                     </h3>
                 </header>
 
-                <div class="mb-3">
-                    <input class="form-control" id="searchInput" type="text" placeholder="Search...">
-                </div>
-
                 <?php
                 // Fetch data from database
-                $query = "SELECT * FROM users";
+                $query = "SELECT * FROM leave_applications WHERE replacement = $user_id AND status != 'pending'";
                 $result = $conn->query($query);
 
                 if ($result->num_rows > 0) {
                     echo '<div class="table-responsive">';
                     echo '<table class="table table-striped table-hover table-bordered" id="userTable">';
                     echo '<thead class="thead-dark">
-                    <tr>
-                        <th scope="col">ID</th>
-                        <th scope="col">Name</th>
-                        <th scope="col">Designation</th>
-                        <th scope="col">Ministry / Dept</th>
-                        <th scope="col">Username</th>
-                        <th scope="col">Role</th>
-                        <th scope="col">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>';
+    <tr>
+        <th scope="col">Leave ID</th>
+        <th scope="col">Date</th>
+        <th scope="col">Number of days</th>
+        <th scope="col">Reason / Dept</th>
+        <th scope="col">Status</th>
+        <th scope="col"></th>
+    </tr>
+  </thead>
+  <tbody>';
 
                     while ($row = $result->fetch_assoc()) {
                         echo '<tr>
-                        <td>' . htmlspecialchars($row['id']) . '</td>
-                        <td>' . htmlspecialchars($row['name']) . '</td>
-                        <td>' . htmlspecialchars($row['designation']) . '</td>
-                        <td>' . htmlspecialchars($row['dept']) . '</td>
-                        <td>' . htmlspecialchars($row['username']) . '</td>
-                        <td>' . htmlspecialchars($row['role']) . '</td>
-                        <td>
-                            <a class="btn btn-primary btn-sm" href="update_user.php?id=' . htmlspecialchars($row['id']) . '">Edit</a> 
-                            <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete(' . htmlspecialchars($row['id']) . ')">Delete</a>
-                        </td>
-                      </tr>';
+        <td>' . htmlspecialchars($row['id']) . '</td>
+        <td>' . htmlspecialchars($row['submissionDate']) . '</td>
+        <td>' . htmlspecialchars($row['leaveDates']) . '</td>
+        <td>' . htmlspecialchars($row['leaveReason']) . '</td>
+        <td>';
+
+                        // Display different badge colors based on status
+                        if ($row['status'] == 'pending') {
+                            echo '<label class="badge badge-warning">' . htmlspecialchars($row['status']) . '</label>';
+                        } elseif ($row['status'] == 'approved') {
+                            echo '<label class="badge badge-success">' . htmlspecialchars($row['status']) . '</label>';
+                        } elseif ($row['status'] == 'rejected') {
+                            echo '<label class="badge badge-danger">' . htmlspecialchars($row['status']) . '</label>';
+                        }
+
+                        echo '</td>
+        <td>
+            <a class="btn btn-success btn-sm" href="view_request.php?id=' . htmlspecialchars($row['id']) . '">View</a>
+        </td>
+      </tr>';
                     }
 
                     echo '</tbody></table>';
@@ -144,6 +153,7 @@ $username = $_SESSION['username'];
                     echo '<div class="alert alert-warning" role="alert">No records found.</div>';
                 }
                 ?>
+
 
             </div>
 
