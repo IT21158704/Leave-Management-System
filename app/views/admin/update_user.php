@@ -29,12 +29,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $name = $_POST['name'];
     $designation = $_POST['designation'];
     $dept = $_POST['dept'];
-    $username = $_POST['username'];
+    $nic = $_POST['nic'];
     $role = $_POST['role'];
 
-    $updateQuery = "UPDATE users SET name = ?, designation = ?, dept = ?, username = ?, role = ? WHERE id = ?";
+    $updateQuery = "UPDATE users SET name = ?, designation = ?, dept = ?, nic = ?, role = ? WHERE id = ?";
     $stmt = $conn->prepare($updateQuery);
-    $stmt->bind_param("sssssi", $name, $designation, $dept, $username, $role, $id);
+    $stmt->bind_param("sssssi", $name, $designation, $dept, $nic, $role, $id);
 
     if ($stmt->execute()) {
         header("Location: view_users.php"); // Redirect to the dashboard or another page
@@ -75,9 +75,9 @@ $conn->close();
     <<!-- partial:partials/_navbar.html -->
         <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
             <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-start">
-                <a class="navbar-brand brand-logo me-5" href="#"><img src="../../assets/images/logo.svg" class="me-2"
+                <a class="navbar-brand brand-logo me-5" href="../../../public/index.php"><img src="../../assets/images/logo.svg" class="me-2"
                         alt="logo" /></a>
-                <a class="navbar-brand brand-logo-mini" href="#"><img src="../../assets/images/logo-mini.svg" alt="logo" /></a>
+                <a class="navbar-brand brand-logo-mini" href="../../../public/index.php"><img src="../../assets/images/logo-mini.svg" alt="logo" /></a>
             </div>
             <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
                 <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize">
@@ -149,9 +149,9 @@ $conn->close();
                             <div class="invalid-feedback">Please enter the ministry or department.</div>
                         </div>
                         <div class="form-group">
-                            <label for="username">Username</label>
-                            <input type="text" class="form-control" id="username" name="username" value="<?php echo htmlspecialchars($row['username']); ?>" required>
-                            <div class="invalid-feedback">Please enter a username.</div>
+                            <label for="nic">NIC</label>
+                            <input type="text" class="form-control" id="nic" name="nic" value="<?php echo htmlspecialchars($row['nic']); ?>" required>
+                            <div class="invalid-feedback">Please enter a nic.</div>
                         </div>
                         <div class="form-group">
                             <label for="role">Role</label>

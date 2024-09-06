@@ -10,27 +10,29 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Admin') {
     exit();
 }
 
+$successMessage = '';
+$errorMessage = '';
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $name = $_POST['name'];
     $designation = $_POST['designation'];
     $dept = $_POST['dept'];
-    $username = $_POST['username'];
+    $nic = $_POST['nic'];
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
     $role = $_POST['role'];
 
-    $sql = "INSERT INTO users (name, designation, dept, username, password, role) VALUES (?, ?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO users (name, designation, dept, nic, password, role) VALUES (?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ssssss", $name, $designation, $dept, $username, $password, $role);
+    $stmt->bind_param("ssssss", $name, $designation, $dept, $nic, $password, $role);
 
     if ($stmt->execute()) {
-        echo '<div class="alert alert-success alert-dismissible fade show" role="alert">Registration successful!
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-    <span aria-hidden="true">&times;</span>
-  </button></div>';
+        $successMessage = 'Registration successful!';
     } else {
-        echo '<div class="alert alert-danger alert-dismissible fade show" role="alert">Error: ' . $stmt->error . '<button type="button" class="close" data-dismiss="alert" aria-label="Close">
-    <span aria-hidden="true">&times;</span>
-  </button></div>';
+        if ($stmt->error == "Duplicate entry 'admin' for key 'nic'"){
+            $errorMessage = 'NIC number already exists!';
+        }else {
+            $errorMessage = 'Error: ' . $stmt->error . '';
+        }
     }
     $stmt->close();
 }
@@ -63,9 +65,9 @@ $conn->close();
     <!-- partial:partials/_navbar.html -->
     <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
         <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-start">
-            <a class="navbar-brand brand-logo me-5" href="#"><img src="../../assets/images/logo.svg" class="me-2"
+            <a class="navbar-brand brand-logo me-5" href="../../../public/index.php"><img src="../../assets/images/logo.svg" class="me-2"
                     alt="logo" /></a>
-            <a class="navbar-brand brand-logo-mini" href="#"><img src="../../assets/images/logo-mini.svg" alt="logo" /></a>
+            <a class="navbar-brand brand-logo-mini" href="../../../public/index.php"><img src="../../assets/images/logo-mini.svg" alt="logo" /></a>
         </div>
         <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
             <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize">
@@ -113,10 +115,22 @@ $conn->close();
         <!-- partial -->
         <div class="main-panel">
             <div class="content-wrapper">
+
+                <?php if (!empty($successMessage)) : ?>
+                    <div class="alert alert-success" role="alert">
+                        <?php echo $successMessage; ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (!empty($errorMessage)) : ?>
+                    <div class="alert alert-danger" role="alert">
+                        <?php echo $errorMessage; ?>
+                    </div>
+                <?php endif; ?>
                 <header>
                     <h3 class="mb-4">
                         Register New User
-                        <!-- Welcome, <?php echo htmlspecialchars($username); ?>! -->
+                        <!-- Welcome, <?php echo htmlspecialchars($nic); ?>! -->
                     </h3>
                 </header>
 
@@ -142,9 +156,9 @@ $conn->close();
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label for="username">Username</label>
-                            <input type="text" class="form-control" id="username" name="username" required>
-                            <div class="invalid-feedback">Please enter a username.</div>
+                            <label for="nic">NIC</label>
+                            <input type="text" class="form-control" id="nic" name="nic" required>
+                            <div class="invalid-feedback">Please enter a NIC.</div>
                         </div>
                         <div class="form-group col-md-6">
                             <label for="password">Password</label>

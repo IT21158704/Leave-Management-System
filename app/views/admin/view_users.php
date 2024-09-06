@@ -11,7 +11,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Admin') {
     exit();
 }
 
-$username = $_SESSION['username'];
+$nic = $_SESSION['nic'];
 ?>
 
 
@@ -41,9 +41,9 @@ $username = $_SESSION['username'];
     <!-- partial:partials/_navbar.html -->
     <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
         <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-start">
-            <a class="navbar-brand brand-logo me-5" href="index.html"><img src="../../assets/images/logo.svg" class="me-2"
+            <a class="navbar-brand brand-logo me-5" href="../../../public/index.php"><img src="../../assets/images/logo.svg" class="me-2"
                     alt="logo" /></a>
-            <a class="navbar-brand brand-logo-mini" href="index.html"><img src="../../assets/images/logo-mini.svg" alt="logo" /></a>
+            <a class="navbar-brand brand-logo-mini" href="../../../public/index.php"><img src="../../assets/images/logo-mini.svg" alt="logo" /></a>
         </div>
         <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
             <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize">
@@ -94,7 +94,6 @@ $username = $_SESSION['username'];
                 <header>
                     <h3 class="mb-4">
                         Registered Users
-                        <!-- Welcome, <?php echo htmlspecialchars($username); ?>! -->
                     </h3>
                 </header>
 
@@ -116,7 +115,7 @@ $username = $_SESSION['username'];
                         <th scope="col">Name</th>
                         <th scope="col">Designation</th>
                         <th scope="col">Ministry / Dept</th>
-                        <th scope="col">Username</th>
+                        <th scope="col">NIC</th>
                         <th scope="col">Role</th>
                         <th scope="col">Action</th>
                     </tr>
@@ -129,7 +128,7 @@ $username = $_SESSION['username'];
                         <td>' . htmlspecialchars($row['name']) . '</td>
                         <td>' . htmlspecialchars($row['designation']) . '</td>
                         <td>' . htmlspecialchars($row['dept']) . '</td>
-                        <td>' . htmlspecialchars($row['username']) . '</td>
+                        <td>' . htmlspecialchars($row['nic']) . '</td>
                         <td>' . htmlspecialchars($row['role']) . '</td>
                         <td>
                             <a class="btn btn-primary btn-sm" href="update_user.php?id=' . htmlspecialchars($row['id']) . '">Edit</a> 
