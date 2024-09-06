@@ -5,7 +5,7 @@ session_start();
 $error_message = ''; // Initialize error message
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $username = $_POST['username'];
+    $nic = $_POST['nic'];
     $password = $_POST['password'];
 
     // Check database connection
@@ -13,14 +13,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         die("Connection failed: " . $conn->connect_error);
     }
 
-    $sql = "SELECT id, password, role FROM users WHERE username = ?";
+    $sql = "SELECT id, password, role FROM users WHERE nic = ?";
     $stmt = $conn->prepare($sql);
 
     if (!$stmt) {
         die('Prepare failed: ' . htmlspecialchars($conn->error));
     }
 
-    $stmt->bind_param("s", $username);
+    $stmt->bind_param("s", $nic);
     $stmt->execute();
     $stmt->store_result();
     $stmt->bind_result($id, $hashed_password, $role);
@@ -29,9 +29,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->fetch();
         if (password_verify($password, $hashed_password)) {
             $_SESSION['user_id'] = $id;
-            $_SESSION['username'] = $username;
+            $_SESSION['nic'] = $nic;
             $_SESSION['role'] = $role;
-            setcookie("username", $username, time() + (86400 * 30), "/"); // 30 days
+            setcookie("nic", $nic, time() + (86400 * 30), "/"); // 30 days
 
             // Redirect based on user role
             switch ($role) {
@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $error_message = 'Invalid password';
         }
     } else {
-        $error_message = 'No user found with that username';
+        $error_message = 'No user found with that nic';
     }
     $stmt->close();
 }
@@ -84,7 +84,7 @@ $conn->close();
     <link rel="stylesheet" href="../../assets/vendors/ti-icons/css/themify-icons.css">
     <link rel="stylesheet" type="text/css" href="../../assets/js/select.dataTables.min.css">
     <link rel="stylesheet" href="../../assets/css/style.css">
-    <link rel="shortcut icon" href="../../assets/images/favicon.png" />
+    <link rel="shortcut icon" href="../assets/images/favicon.png" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
@@ -147,7 +147,7 @@ $conn->close();
 <body>
     <div class="login-card">
         <div class="login-header">
-            <img src="../assets/images/logo.png" alt="Government Logo" class="logo">
+            <img src="../assets/images/sl-logo.svg" alt="Government Logo" class="logo">
             <h3>Leave Management System</h3>
             <h5>Ministry of Fisheries</h5>
         </div>
@@ -161,12 +161,12 @@ $conn->close();
                     </div>
                 <?php endif; ?>
                 <div class="form-group">
-                    <label for="username">Username</label>
-                    <input type="text" class="form-control" id="username" name="username" required>
+                    <label for="nic">NIC</label>
+                    <input type="text" class="form-control" id="nic" name="nic" placeholder="Enter NIC Number" required>
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" class="form-control" id="password" name="password" required>
+                    <input type="password" class="form-control" id="password" name="password" placeholder="Enter Password" required>
                 </div>
                 <button type="submit" class="btn btn-primary btn-block">Login</button>
             </form>
