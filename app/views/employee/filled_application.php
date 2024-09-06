@@ -69,7 +69,7 @@ $conn->close();
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Admin Dashboard</title>
+    <title><?php echo htmlspecialchars($_SESSION['role']); ?></title>
     <link rel="stylesheet" href="../../assets/vendors/feather/feather.css">
     <link rel="stylesheet" href="../../assets/vendors/ti-icons/css/themify-icons.css">
     <link rel="stylesheet" href="../../assets/vendors/css/vendor.bundle.base.css">
@@ -252,14 +252,17 @@ $conn->close();
                     <!-- Replacement -->
                     <div class="form-group">
                         <label for="replacement">Name of Employee Who Will Act as you</label>
-                        <input type="text" id="replacement" class="form-control" value="<?php echo htmlspecialchars($replacement_name); ?>" disabled>
+                        <input type="text" id="replacement" class="form-control"
+                            value="<?php echo ($replacement_name === 'Unknown') ? 'Not assigned yet' : htmlspecialchars($replacement_name); ?>" disabled>
                     </div>
+
+
 
                     <!-- Acting Officer -->
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label for="actingOfficer">Officer Acting</label>
-                            <input type="text" id="actingOfficer" class="form-control" value="<?php echo htmlspecialchars($acting_officer_name); ?>" disabled>
+                            <input type="text" id="actingOfficer" class="form-control" value="<?php echo ($acting_officer_name === 'Unknown') ? 'Not selected' : htmlspecialchars($acting_officer_name ?? 'Not selected'); ?>" disabled>
                         </div>
 
                         <!-- Supervising Officer -->

@@ -42,10 +42,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     header("Location: ./employee/employee_dashboard.php");
                     break;
                 case 'Supervising Officer':
-                    header("Location: supervising_officer_dashboard.php");
+                    header("Location: ./supervisingOfficer/supervising_officer_dashboard.php");
                     break;
                 case 'Head of Department':
-                    header("Location: head_of_department_dashboard.php");
+                    header("Location: ./headOfDept/head_of_department_dashboard.php");
                     break;
                 case 'Officer Acting':
                     header("Location: ./officerActing/officer_acting_dashboard.php");
