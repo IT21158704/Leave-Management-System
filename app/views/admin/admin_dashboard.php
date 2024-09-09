@@ -28,6 +28,17 @@ if ($result->num_rows > 0) {
 
 $currentDate = date("Y-m-d");
 
+$sql = "SELECT COUNT(*) as total_records FROM users";
+$result = $conn->query($sql);
+
+if ($result->num_rows > 0) {
+    // Fetch the count and store it in a variable
+    $count = $result->fetch_assoc();
+    $total_records = $count['total_records'];
+} else {
+    echo "No records found.";
+}
+
 ?>
 
 <head>
@@ -127,9 +138,9 @@ $currentDate = date("Y-m-d");
                         <div class="col-md-6 mb-4 stretch-card transparent">
                             <div class="card card-tale">
                                 <div class="card-body">
-                                    <p class="mb-4">Today’s Bookings</p>
-                                    <p class="fs-30 mb-2">4006</p>
-                                    <p>10.00% (30 days)</p>
+                                    <p class="mb-4">Active Users</p>
+                                    <p class="fs-30 mb-2"><?php echo htmlspecialchars($total_records); ?></p>
+                                    <p>22.00% (30 days)</p>
                                 </div>
                             </div>
                         </div>

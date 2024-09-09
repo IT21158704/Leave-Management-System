@@ -21,13 +21,24 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
-    $row = $result->fetch_assoc();
+    $user = $result->fetch_assoc();
 } else {
     die("Record not found");
 }
 
 $currentDate = date("Y-m-d");
 $currentTime = date("h:i:s A");
+
+$query = "SELECT COUNT(*) as total_applications FROM leave_applications WHERE user_id = $id AND status = 'pending'";
+$result = $conn->query($query);
+
+if ($result->num_rows > 0) {
+    // Fetch the count and store it in a variable
+    $row = $result->fetch_assoc();
+    $total_applications = $row['total_applications'];
+} else {
+    $total_applications =  "No leave applications found.";
+}
 
 ?>
 
@@ -116,7 +127,7 @@ $currentTime = date("h:i:s A");
                     <div class="col-md-12 grid-margin">
                         <div class="row">
                             <div class="col-12 col-xl-8 mb-4 mb-xl-0">
-                                <h3 class="mb-4">Welcome <?php echo htmlspecialchars($row['name']); ?> !</h3>
+                                <h3 class="mb-4">Welcome <?php echo htmlspecialchars($user['name']); ?> !</h3>
                             </div>
                             <div class="col-12 col-xl-4">
                                 <div class="justify-content-end d-flex">
@@ -134,16 +145,15 @@ $currentTime = date("h:i:s A");
                         <div class="col-md-6 mb-4 stretch-card transparent">
                             <div class="card card-tale">
                                 <div class="card-body">
-                                    <p class="mb-4">Today’s Bookings</p>
-                                    <p class="fs-30 mb-2">4006</p>
-                                    <p>10.00% (30 days)</p>
+                                    <p class="mb-4">Pending Leaves</p>
+                                    <p class="fs-30 mb-2"><?php echo htmlspecialchars($total_applications); ?> </p>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6 mb-4 stretch-card transparent">
                             <div class="card card-dark-blue">
                                 <div class="card-body">
-                                    <p class="mb-4">Total Bookings</p>
+                                    <p class="mb-4">Pending Requests</p>
                                     <p class="fs-30 mb-2">61344</p>
                                     <p>22.00% (30 days)</p>
                                 </div>
@@ -154,7 +164,7 @@ $currentTime = date("h:i:s A");
                         <div class="col-md-6 mb-4 mb-lg-0 stretch-card transparent">
                             <div class="card card-light-blue">
                                 <div class="card-body">
-                                    <p class="mb-4">Number of Meetings</p>
+                                    <p class="mb-4">Available Casual Leaves</p>
                                     <p class="fs-30 mb-2">34040</p>
                                     <p>2.00% (30 days)</p>
                                 </div>
@@ -163,7 +173,7 @@ $currentTime = date("h:i:s A");
                         <div class="col-md-6 stretch-card transparent">
                             <div class="card card-light-danger">
                                 <div class="card-body">
-                                    <p class="mb-4">Number of Clients</p>
+                                    <p class="mb-4">Available Rest Leaves</p>
                                     <p class="fs-30 mb-2">47033</p>
                                     <p>0.22% (30 days)</p>
                                 </div>
