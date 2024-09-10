@@ -31,13 +31,30 @@ $currentTime = date("h:i:s A");
 
 $query = "SELECT COUNT(*) as total_applications FROM leave_applications WHERE user_id = $id AND status = 'pending'";
 $result = $conn->query($query);
-
 if ($result->num_rows > 0) {
     // Fetch the count and store it in a variable
     $row = $result->fetch_assoc();
     $total_applications = $row['total_applications'];
 } else {
     $total_applications =  "No leave applications found.";
+}
+
+$query = "SELECT COUNT(*) as total_requests FROM leave_applications WHERE replacement = $id AND status = 'pending'";
+$result = $conn->query($query);
+if ($result->num_rows > 0) {
+    // Fetch the count and store it in a variable
+    $row = $result->fetch_assoc();
+    $total_requests = $row['total_requests'];
+} else {
+    $total_requests =  "No leave applications found.";
+}
+
+$sql = "SELECT casual_leaves, rest_leaves FROM available_leaves WHERE user_id = $id";
+$result = $conn->query($sql);
+if ($result->num_rows > 0) {
+    $row = $result->fetch_assoc();
+    $casual = $row["casual_leaves"];
+    $rest = $row["rest_leaves"];
 }
 
 ?>
@@ -96,25 +113,31 @@ if ($result->num_rows > 0) {
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="leave_application.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-note-plus-outline menu-icon"></i>
                         <span class="menu-title">Leave Application</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="leave_application_history.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-history menu-icon"></i>
                         <span class="menu-title">Leave History</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="leave_requests.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
                         <span class="menu-title">Leave Requests</span>
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="profile.php">
+                        <i class="icon-head menu-icon"></i>
+                        <span class="menu-title">Profile</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="../logout.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-logout menu-icon"></i>
                         <span class="menu-title">Logout</span>
                     </a>
                 </li>
@@ -154,8 +177,7 @@ if ($result->num_rows > 0) {
                             <div class="card card-dark-blue">
                                 <div class="card-body">
                                     <p class="mb-4">Pending Requests</p>
-                                    <p class="fs-30 mb-2">61344</p>
-                                    <p>22.00% (30 days)</p>
+                                    <p class="fs-30 mb-2"><?php echo htmlspecialchars($total_requests); ?> </p>
                                 </div>
                             </div>
                         </div>
@@ -165,8 +187,7 @@ if ($result->num_rows > 0) {
                             <div class="card card-light-blue">
                                 <div class="card-body">
                                     <p class="mb-4">Available Casual Leaves</p>
-                                    <p class="fs-30 mb-2">34040</p>
-                                    <p>2.00% (30 days)</p>
+                                    <p class="fs-30 mb-2"><?php echo htmlspecialchars($casual); ?> </p>
                                 </div>
                             </div>
                         </div>
@@ -174,8 +195,7 @@ if ($result->num_rows > 0) {
                             <div class="card card-light-danger">
                                 <div class="card-body">
                                     <p class="mb-4">Available Rest Leaves</p>
-                                    <p class="fs-30 mb-2">47033</p>
-                                    <p>0.22% (30 days)</p>
+                                    <p class="fs-30 mb-2"><?php echo htmlspecialchars($rest); ?> </p>
                                 </div>
                             </div>
                         </div>

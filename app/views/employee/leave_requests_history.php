@@ -70,25 +70,31 @@ $user_id = $_SESSION['user_id'];
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="leave_application.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-note-plus-outline menu-icon"></i>
                         <span class="menu-title">Leave Application</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="leave_application_history.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-history menu-icon"></i>
                         <span class="menu-title">Leave History</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="leave_requests.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
                         <span class="menu-title">Leave Requests</span>
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="profile.php">
+                        <i class="icon-head menu-icon"></i>
+                        <span class="menu-title">Profile</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="../logout.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-logout menu-icon"></i>
                         <span class="menu-title">Logout</span>
                     </a>
                 </li>
@@ -105,8 +111,14 @@ $user_id = $_SESSION['user_id'];
 
                 <?php
                 // Fetch data from database
-                $query = "SELECT * FROM leave_applications WHERE replacement = $user_id AND status != 'pending'";
+                $query = "
+                SELECT * 
+                FROM leave_applications la
+                WHERE replacement = $user_id AND status != 'pending'
+
+                ";
                 $result = $conn->query($query);
+                
 
                 if ($result->num_rows > 0) {
                     echo '<div class="table-responsive">';

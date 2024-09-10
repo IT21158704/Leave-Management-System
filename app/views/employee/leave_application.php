@@ -1,6 +1,7 @@
 <?php
 
 include('../../../config/config.php');
+include('../../../config/mailer.php');
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -21,7 +22,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
-    $row = $result->fetch_assoc();
+    $user = $result->fetch_assoc();
 } else {
     die("Record not found");
 }
@@ -87,6 +88,37 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
             $stmt->bind_param("i", $application_id);
 
             if ($stmt->execute()) {
+                if ($actingOfficer != null) {
+                    // Fetch existing data (email and name)
+                    $query = "SELECT email, name FROM users WHERE id = ?";
+                    $stmt = $conn->prepare($query);
+                    $stmt->bind_param("i", $actingOfficer);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                
+                    if ($result->num_rows > 0) {
+                        $row = $result->fetch_assoc(); // Fetch the row as an associative array
+                        $receiverEmail = $row['email']; // Access the 'email' field
+                        $receiverName = $row['name']; // Access the 'name' field
+                    }
+                } else {
+                    // Fetch existing data (email and name)
+                    $query = "SELECT email, name FROM users WHERE id = ?";
+                    $stmt = $conn->prepare($query);
+                    $stmt->bind_param("i", $supervisingOfficer);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                
+                    if ($result->num_rows > 0) {
+                        $row = $result->fetch_assoc(); // Fetch the row as an associative array
+                        $receiverEmail = $row['email']; // Access the 'email' field
+                        $receiverName = $row['name']; // Access the 'name' field
+                    }
+                }
+                
+                $body = leaveRequestEmailBody($user['name'], $leaveReason, $commenceLeaveDate, $resumeDate, $fullReason);
+                sendMail($recieveremail, $receiverName, 'Leave Request from ', $user['name'], $body);
+                
                 $success_message = "Leave application submitted successfully!";
                 header("Location: leave_application_history.php");
                 exit();
@@ -162,25 +194,31 @@ $conn->close();
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="leave_application.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-note-plus-outline menu-icon"></i>
                         <span class="menu-title">Leave Application</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="leave_application_history.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-history menu-icon"></i>
                         <span class="menu-title">Leave History</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="leave_requests.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
                         <span class="menu-title">Leave Requests</span>
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="profile.php">
+                        <i class="icon-head menu-icon"></i>
+                        <span class="menu-title">Profile</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="../logout.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-logout menu-icon"></i>
                         <span class="menu-title">Logout</span>
                     </a>
                 </li>
@@ -220,16 +258,16 @@ $conn->close();
                 <form method="post" action="" class="needs-validation" novalidate>
                     <div class="form-group">
                         <label for="name">Name</label>
-                        <input type="text" class="form-control" id="name" name="name" value="<?php echo htmlspecialchars($row['name']); ?>" disabled required>
+                        <input type="text" class="form-control" id="name" name="name" value="<?php echo htmlspecialchars($user['name']); ?>" disabled required>
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label for="designation">Designation</label>
-                            <input type="text" class="form-control" id="designation" name="designation" value="<?php echo htmlspecialchars($row['designation']); ?>" disabled required>
+                            <input type="text" class="form-control" id="designation" name="designation" value="<?php echo htmlspecialchars($user['designation']); ?>" disabled required>
                         </div>
                         <div class="form-group col-md-6">
                             <label for="dept">Ministry/Dept.</label>
-                            <input type="text" class="form-control" id="dept" name="dept" value="<?php echo htmlspecialchars($row['dept']); ?>" disabled required>
+                            <input type="text" class="form-control" id="dept" name="dept" value="<?php echo htmlspecialchars($user['dept']); ?>" disabled required>
                         </div>
                     </div>
 

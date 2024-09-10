@@ -102,6 +102,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt->bind_param("i", $application_id);
 
                     if ($stmt->execute()) {
+                        //email notification
+                        $query = "SELECT email, name FROM users WHERE id = ?";
+                        $stmt = $conn->prepare($query);
+                        $stmt->bind_param("i", $replacement_id);
+                        $stmt->execute();
+                        $result = $stmt->get_result();
+
+                        if ($result->num_rows > 0) {
+                            $row = $result->fetch_assoc(); // Fetch the row as an associative array
+                            $replacementEmail = $row['email']; // Access the 'email' field
+                            $replacementName = $row['name']; // Access the 'name' field
+                        }
+
+                        $body = leaveRequestEmailBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], $application['fullReason']);
+                        sendMail($replacementEmail, $replacementName, 'Leave Request from ', $user['name'], $body);
+
+                        $query = "SELECT email, name FROM users WHERE role = 'Head of Department'";
+                        $stmt = $conn->prepare($query);
+                        $stmt->execute();
+                        $result = $stmt->get_result();
+
+                        if ($result->num_rows > 0) {
+                            // Fetch all rows and send emails to each head of department
+                            while ($row = $result->fetch_assoc()) {
+                                $headOfDeptEmail = $row['email']; // Access the 'email' field
+                                $headOfDeptName = $row['name'];   // Access the 'name' field
+
+                                // Generate the email body for each head of department
+                                $body = leaveRequestEmailBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], $application['fullReason']);
+
+                                // Send email
+                                sendMail($headOfDeptEmail, $headOfDeptName, 'Leave Request from ' . $user['name'], $body);
+                            }
+                        }
+
                         header("Location: leave_requests.php?status=updated");
                         exit();
                     } else {
@@ -122,6 +157,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param("i", $application_id);
 
             if ($stmt->execute()) {
+                //email notification
+
+                $query = "SELECT email, name FROM users WHERE role = 'Head of Department'";
+                $stmt = $conn->prepare($query);
+                $stmt->execute();
+                $result = $stmt->get_result();
+
+                if ($result->num_rows > 0) {
+                    // Fetch all rows and send emails to each head of department
+                    while ($row = $result->fetch_assoc()) {
+                        $headOfDeptEmail = $row['email']; // Access the 'email' field
+                        $headOfDeptName = $row['name'];   // Access the 'name' field
+
+                        // Generate the email body for each head of department
+                        $body = leaveRequestEmailBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], $application['fullReason']);
+
+                        // Send email
+                        sendMail($headOfDeptEmail, $headOfDeptName, 'Leave Request from ' . $user['name'], $body);
+                    }
+                }
+
+                // Redirect after emails are sent
                 header("Location: leave_requests.php?status=updated");
                 exit();
             } else {
@@ -205,13 +262,19 @@ $conn->close();
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="leave_requests.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
                         <span class="menu-title">Leave Requests</span>
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="profile.php">
+                        <i class="icon-head menu-icon"></i>
+                        <span class="menu-title">Profile</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="../logout.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-logout menu-icon"></i>
                         <span class="menu-title">Logout</span>
                     </a>
                 </li>
@@ -333,7 +396,7 @@ $conn->close();
                     </div>
 
                     <?php
-                    if (is_null($application['actingOfficer'])) { // Check if the value is actually NULL
+                    if (is_null($application['replacement'])) { // Check if the value is actually NULL
                         echo '
 <div class="form-group">
     <label for="replacement">Name of Employee Who Will Act as Replacement</label>
@@ -349,17 +412,20 @@ $conn->close();
                         echo '</select>
     <div class="invalid-feedback">Please select a replacement.</div>
 </div>';
+                    } else {
+                        echo '
+                    <div class="form-group">
+                        <label for="replacement">Name of Employee Who Will Act as Replacement</label>
+                        <input type="text" id="replacement" class="form-control" value="' . htmlspecialchars($replacement_name) . '" disabled></textarea>
+                    </div>';
                     }
                     ?>
-
-
-
 
                     <!-- Acting Officer -->
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label for="actingOfficer">Officer Acting</label>
-                            <input type="text" id="actingOfficer" class="form-control" value="<?php echo ($acting_officer_name === 'Unknown') ? 'Not selected' : htmlspecialchars($acting_officer_name ?? 'Not selected'); ?>" disabled>
+                            <label for="replacement">Officer Acting</label>
+                            <input type="text" id="replacement" class="form-control" value="<?php echo ($acting_officer_name === 'Unknown') ? 'Not selected' : htmlspecialchars($acting_officer_name ?? 'Not selected'); ?>" disabled>
                         </div>
 
                         <div class="form-group col-md-6">

@@ -99,6 +99,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->bind_param("i", $application_id);
 
                 if ($stmt->execute()) {
+                    //email notification
+                    $query = "SELECT email, name FROM users WHERE id = ?";
+                    $stmt = $conn->prepare($query);
+                    $stmt->bind_param("i", $replacement_id);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+
+                    if ($result->num_rows > 0) {
+                        $row = $result->fetch_assoc(); // Fetch the row as an associative array
+                        $replacementEmail = $row['email']; // Access the 'email' field
+                        $replacementName = $row['name']; // Access the 'name' field
+                    }
+
+                    $query = "SELECT email, name FROM users WHERE id = ?";
+                    $stmt = $conn->prepare($query);
+                    $stmt->bind_param("i", $application['supervisingOfficer']);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+
+                    if ($result->num_rows > 0) {
+                        $row = $result->fetch_assoc(); // Fetch the row as an associative array
+                        $supervisorEmail = $row['email']; // Access the 'email' field
+                        $supervisorName = $row['name']; // Access the 'name' field
+                    }
+                
+                    $body = leaveRequestEmailBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], $application['fullReason']);
+                    sendMail($replacementEmail, $replacementName, 'Leave Request from ', $user['name'], $body);
+                
+                    $body = leaveRequestEmailBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], $application['fullReason']);
+                    sendMail($supervisorEmail, $supervisorName, 'Leave Request from ', $user['name'], $body);
+
                     header("Location: leave_requests.php?status=updated");
                     exit();
                 } else {
@@ -187,13 +218,19 @@ $conn->close();
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="leave_requests.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
                         <span class="menu-title">Leave Requests</span>
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="profile.php">
+                        <i class="icon-head menu-icon"></i>
+                        <span class="menu-title">Profile</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="../logout.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-logout menu-icon"></i>
                         <span class="menu-title">Logout</span>
                     </a>
                 </li>

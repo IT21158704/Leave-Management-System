@@ -73,13 +73,19 @@ $user_id = $_SESSION['user_id'];
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="leave_requests.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
                         <span class="menu-title">Leave Requests</span>
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="profile.php">
+                        <i class="icon-head menu-icon"></i>
+                        <span class="menu-title">Profile</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="../logout.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-logout menu-icon"></i>
                         <span class="menu-title">Logout</span>
                     </a>
                 </li>
@@ -113,7 +119,7 @@ $user_id = $_SESSION['user_id'];
     WHERE la.supervisingOfficer = '$user_id'
     AND la.status = 'pending'
     AND (
-        (rs.acting_officer_status = 'Approved' AND rs.supervising_officer_status = 'Pending')
+        (rs.acting_officer_status = 'Approved' AND rs.supervising_officer_status = 'Pending' AND rs.replacement_status = 'Approved')
         OR (la.actingOfficer IS NULL AND rs.supervising_officer_status = 'Pending')
     )
 ";

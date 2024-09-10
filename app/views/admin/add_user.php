@@ -1,5 +1,6 @@
 <?php
 include('../../../config/config.php');
+include('../../../config/mailer.php');
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -18,19 +19,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $designation = $_POST['designation'];
     $dept = $_POST['dept'];
     $nic = $_POST['nic'];
+    $email = $_POST['email'];
+    $temp = $_POST['password'];
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
     $role = $_POST['role'];
 
-    $sql = "INSERT INTO users (name, designation, dept, nic, password, role) VALUES (?, ?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO users (name, designation, dept, nic, email, password, role) VALUES (?, ?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ssssss", $name, $designation, $dept, $nic, $password, $role);
+    $stmt->bind_param("sssssss", $name, $designation, $dept, $nic, $email, $password, $role);
 
     if ($stmt->execute()) {
-        $successMessage = 'Registration successful!';
+        $new_user_id = $conn->insert_id;
+
+        // Now insert into the available_leaves table with the new_user_id
+        $query = "INSERT INTO available_leaves (user_id) VALUES (?)";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("i", $new_user_id);
+
+        if ($stmt->execute()) {
+            $body = newUserEmailBody($name, $nic, $temp);
+            sendMail($email, $name, 'Welcome to Leave Management System', $body);
+            $successMessage = 'Registration successful!';
+        } else {
+            $error_message = $conn->error;
+        }
     } else {
-        if ($stmt->error == "Duplicate entry 'admin' for key 'nic'"){
+        if ($stmt->error == "Duplicate entry 'admin' for key 'username'") {
             $errorMessage = 'NIC number already exists!';
-        }else {
+        } elseif ($stmt->error == "Duplicate entry 'admin' for key 'nic'") {
+            $errorMessage = 'NIC number already exists!';
+        } else {
             $errorMessage = 'Error: ' . $stmt->error . '';
         }
     }
@@ -94,19 +112,19 @@ $conn->close();
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="view_users.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-account-outline menu-icon"></i>
                         <span class="menu-title">View Users</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="add_user.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-account-plus-outline menu-icon"></i>
                         <span class="menu-title">Add Users</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="../logout.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-logout menu-icon"></i>
                         <span class="menu-title">Logout</span>
                     </a>
                 </li>
@@ -130,7 +148,6 @@ $conn->close();
                 <header>
                     <h3 class="mb-4">
                         Register New User
-                        <!-- Welcome, <?php echo htmlspecialchars($nic); ?>! -->
                     </h3>
                 </header>
 
@@ -159,6 +176,13 @@ $conn->close();
                             <label for="nic">NIC</label>
                             <input type="text" class="form-control" id="nic" name="nic" required>
                             <div class="invalid-feedback">Please enter a NIC.</div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="email">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                            <div class="invalid-feedback">Please enter a Email.</div>
                         </div>
                         <div class="form-group col-md-6">
                             <label for="password">Password</label>
