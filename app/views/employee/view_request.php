@@ -93,6 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param("i", $application_id);
 
         if ($stmt->execute()) {
+            $body = leaveConfirmationBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], 'Rejected');
+            sendMail($user['email'], $user['name'], 'Leave Request Status', $body);
             header("Location: leave_requests.php?status=updated");
             exit();
         } else {

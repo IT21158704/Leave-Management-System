@@ -1,6 +1,7 @@
 <?php
 
 include('../../../config/config.php');
+include('../../../config/mailer.php');
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -125,10 +126,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 
                     $body = leaveRequestEmailBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], $application['fullReason']);
-                    sendMail($replacementEmail, $replacementName, 'Leave Request from ', $user['name'], $body);
+                    sendMail($replacementEmail, $replacementName, 'Leave Request from ' . $user['name'], $body);
                 
                     $body = leaveRequestEmailBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], $application['fullReason']);
-                    sendMail($supervisorEmail, $supervisorName, 'Leave Request from ', $user['name'], $body);
+                    sendMail($supervisorEmail, $supervisorName, 'Leave Request from ' . $user['name'], $body);
 
                     header("Location: leave_requests.php?status=updated");
                     exit();

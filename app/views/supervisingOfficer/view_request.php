@@ -1,6 +1,7 @@
 <?php
 
 include('../../../config/config.php');
+include('../../../config/mailer.php');
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -116,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
 
                         $body = leaveRequestEmailBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], $application['fullReason']);
-                        sendMail($replacementEmail, $replacementName, 'Leave Request from ', $user['name'], $body);
+                        sendMail($replacementEmail, $replacementName, 'Leave Request from ' . $user['name'], $body);
 
                         $query = "SELECT email, name FROM users WHERE role = 'Head of Department'";
                         $stmt = $conn->prepare($query);
