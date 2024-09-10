@@ -17,13 +17,13 @@ switch ($_SESSION['role']) {
         header("Location: ../app/views/employee/employee_dashboard.php");
         break;
     case 'Supervising Officer':
-        header("Location: supervising_officer_dashboard.php");
+        header("Location:  ../app/views/supervisingOfficer/supervising_officer_dashboard.php");
         break;
     case 'Head of Department':
-        header("Location: head_of_department_dashboard.php");
+        header("Location:  ../app/views/headOfDept/head_of_department_dashboard.php");
         break;
     case 'Officer Acting':
-        header("Location: officer_acting_dashboard.php");
+        header("Location:  ../app/views/officerActing/officer_acting_dashboard.php");
         break;
     case 'Admin':
         header("Location: ../app/views/admin/admin_dashboard.php");
