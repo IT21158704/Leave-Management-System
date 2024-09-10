@@ -88,6 +88,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
             $stmt->bind_param("i", $application_id);
 
             if ($stmt->execute()) {
+
                 if ($actingOfficer != null) {
                     // Fetch existing data (email and name)
                     $query = "SELECT email, name FROM users WHERE id = ?";
@@ -117,7 +118,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
                 }
                 
                 $body = leaveRequestEmailBody($user['name'], $leaveReason, $commenceLeaveDate, $resumeDate, $fullReason);
-                sendMail($recieveremail, $receiverName, 'Leave Request from ', $user['name'], $body);
+                sendMail($receiverEmail, $receiverName, 'Leave Request from ' . $user['name'], $body);
                 
                 $success_message = "Leave application submitted successfully!";
                 header("Location: leave_application_history.php");
