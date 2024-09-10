@@ -95,19 +95,19 @@ if ($result->num_rows > 0) {
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="view_users.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-account-outline menu-icon"></i>
                         <span class="menu-title">View Users</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="add_user.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-account-plus-outline menu-icon"></i>
                         <span class="menu-title">Add Users</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="../logout.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-logout menu-icon"></i>
                         <span class="menu-title">Logout</span>
                     </a>
                 </li>

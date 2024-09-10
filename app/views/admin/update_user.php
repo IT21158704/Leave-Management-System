@@ -30,11 +30,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $designation = $_POST['designation'];
     $dept = $_POST['dept'];
     $nic = $_POST['nic'];
+    $email = $_POST['email'];
     $role = $_POST['role'];
 
-    $updateQuery = "UPDATE users SET name = ?, designation = ?, dept = ?, nic = ?, role = ? WHERE id = ?";
+    $updateQuery = "UPDATE users SET name = ?, designation = ?, dept = ?, nic = ?, email = ?, role = ? WHERE id = ?";
     $stmt = $conn->prepare($updateQuery);
-    $stmt->bind_param("sssssi", $name, $designation, $dept, $nic, $role, $id);
+    $stmt->bind_param("ssssssi", $name, $designation, $dept, $nic, $email, $role, $id);
 
     if ($stmt->execute()) {
         header("Location: view_users.php"); // Redirect to the dashboard or another page
@@ -104,19 +105,19 @@ $conn->close();
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="view_users.php">
-                            <i class="icon-grid menu-icon"></i>
+                            <i class="mdi mdi-account-outline menu-icon"></i>
                             <span class="menu-title">View Users</span>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="add_user.php">
-                            <i class="icon-grid menu-icon"></i>
+                            <i class="mdi mdi-account-plus-outline menu-icon"></i>
                             <span class="menu-title">Add Users</span>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="../logout.php">
-                            <i class="icon-grid menu-icon"></i>
+                            <i class="mdi mdi-logout menu-icon"></i>
                             <span class="menu-title">Logout</span>
                         </a>
                     </li>
@@ -152,6 +153,11 @@ $conn->close();
                             <label for="nic">NIC</label>
                             <input type="text" class="form-control" id="nic" name="nic" value="<?php echo htmlspecialchars($row['nic']); ?>" required>
                             <div class="invalid-feedback">Please enter a nic.</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="text" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($row['email']); ?>" required>
+                            <div class="invalid-feedback">Please enter a Email.</div>
                         </div>
                         <div class="form-group">
                             <label for="role">Role</label>

@@ -1,6 +1,7 @@
 <?php
 
 include('../../../config/config.php');
+include('../../../config/mailer.php');
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -90,15 +91,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($stmt->execute()) {
             // Insert a record into the request_status table
-            $query = "UPDATE request_status SET status = 'Approved' WHERE leave_application_id = ?";
+            $query = "UPDATE request_status SET head_of_department_status = 'Approved' WHERE leave_application_id = ?";
             $stmt = $conn->prepare($query);
             $stmt->bind_param("i", $application_id);
 
             if ($stmt->execute()) {
-                header("Location: leave_requests.php?status=updated");
-                exit();
-            } else {
-                echo "Error inserting record: " . $conn->error;
+                // Get the selected replacement employee ID from the form
+
+                // Deduct leave days based on the type of leave
+                $leave_dates = $application['leaveDates'];  // Number of days applied for
+                $leave_reason = $application['leaveReason']; // Type of leave ('Casual' or 'Rest')
+
+                // Get current available leaves from the available_leaves table
+                $query = "SELECT casual_leaves, rest_leaves FROM available_leaves WHERE user_id = ?";
+                $stmt = $conn->prepare($query);
+                $stmt->bind_param("i", $id); // $id is the user_id from the application
+                $stmt->execute();
+                $result = $stmt->get_result();
+
+                if ($result->num_rows > 0) {
+                    $available_leaves = $result->fetch_assoc();
+
+                    if ($leave_reason == 'Casual') {
+                        // Deduct casual leaves
+                        if ($available_leaves['casual_leaves'] >= $leave_dates) {
+                            $new_casual_leaves = $available_leaves['casual_leaves'] - $leave_dates;
+                            $query = "UPDATE available_leaves SET casual_leaves = ? WHERE user_id = ?";
+                            $stmt = $conn->prepare($query);
+                            $stmt->bind_param("ii", $new_casual_leaves, $id);
+                            if ($stmt->execute()) {
+                                $body = leaveConfirmationBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], 'Approved');
+                                sendMail($user['email'], $user['name'], 'Leave Request Status', $body);
+
+                                header("Location: leave_requests.php?status=updated");
+                                exit();
+                            }
+                        } else {
+                            echo "Not enough casual leaves available.";
+                            exit();
+                        }
+                    } elseif ($leave_reason == 'Rest') {
+                        // Deduct rest leaves
+                        if ($available_leaves['rest_leaves'] >= $leave_dates) {
+                            $new_rest_leaves = $available_leaves['rest_leaves'] - $leave_dates;
+                            $query = "UPDATE available_leaves SET rest_leaves = ? WHERE user_id = ?";
+                            $stmt = $conn->prepare($query);
+                            $stmt->bind_param("ii", $new_rest_leaves, $id);
+                            if ($stmt->execute()) {
+                                $body = leaveConfirmationBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], 'Approved');
+                                sendMail($user['email'], $user['name'], 'Leave Request Status', $body);
+                                header("Location: leave_requests.php?status=updated");
+                                exit();
+                            }
+                        } else {
+                            echo "Not enough rest leaves available.";
+                            exit();
+                        }
+                    }
+                }
             }
 
             $stmt->close();
@@ -112,6 +162,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param("i", $application_id);
 
         if ($stmt->execute()) {
+            $body = leaveConfirmationBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], 'Rejected');
+            sendMail($user['email'], $user['name'], 'Leave Request Status', $body);
             header("Location: leave_requests.php?status=updated");
             exit();
         } else {
@@ -180,13 +232,13 @@ $conn->close();
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="leave_requests.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
                         <span class="menu-title">Leave Requests</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="../logout.php">
-                        <i class="icon-grid menu-icon"></i>
+                        <i class="mdi mdi-logout menu-icon"></i>
                         <span class="menu-title">Logout</span>
                     </a>
                 </li>
@@ -307,28 +359,10 @@ $conn->close();
                         <textarea class="form-control" placeholder="<?php echo htmlspecialchars($application['addressDuringLeave']); ?>" disabled></textarea>
                     </div>
 
-                    <?php
-                    if (is_null($application['actingOfficer'])) { // Check if the value is actually NULL
-                        echo '
-<div class="form-group">
-    <label for="replacement">Name of Employee Who Will Act as Replacement</label>
-    <select class="form-control" id="replacement" name="replacement" required>
-        <option value="">Select an Employee Who Will Act as Replacement</option>';
-
-                        if ($employees_result->num_rows > 0) {
-                            while ($employee = $employees_result->fetch_assoc()) {
-                                echo '<option value="' . htmlspecialchars($employee['id']) . '">' . htmlspecialchars($employee['name']) . '</option>';
-                            }
-                        }
-
-                        echo '</select>
-    <div class="invalid-feedback">Please select a replacement.</div>
-</div>';
-                    }
-                    ?>
-
-
-
+                    <div class="form-group">
+                        <label for="replacement">Name of Employee Who Will Act as Replacement</label>
+                        <input type="text" id="replacement" class="form-control" value="<?php echo htmlspecialchars($replacement_name); ?>" disabled></textarea>
+                    </div>
 
                     <!-- Acting Officer -->
                     <div class="form-row">
