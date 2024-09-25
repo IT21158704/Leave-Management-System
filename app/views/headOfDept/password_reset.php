@@ -54,7 +54,7 @@ $conn->close();
     <link rel="stylesheet" href="../../assets/vendors/ti-icons/css/themify-icons.css">
     <link rel="stylesheet" type="text/css" href="../../assets/js/select.dataTables.min.css">
     <link rel="stylesheet" href="../../assets/css/style.css">
-    <link rel="shortcut icon" href="../../assets/images/favicon.png" />
+    <link rel="shortcut icon" href="../../assets/images/favicon.svg" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
@@ -84,34 +84,40 @@ $conn->close();
         <!-- partial -->
         <div class="container-fluid page-body-wrapper">
             <!-- partial:partials/_sidebar.html -->
-            <nav class="sidebar sidebar-offcanvas" id="sidebar">
-                <ul class="nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="head_of_department_dashboard.php">
-                            <i class="icon-grid menu-icon"></i>
-                            <span class="menu-title">Home</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="leave_requests.php">
-                            <i class="mdi mdi-bookmark-outline menu-icon"></i>
-                            <span class="menu-title">Leave Requests</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="profile.php">
-                            <i class="icon-head menu-icon"></i>
-                            <span class="menu-title">Profile</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="../logout.php">
-                            <i class="mdi mdi-logout menu-icon"></i>
-                            <span class="menu-title">Logout</span>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
+        <nav class="sidebar sidebar-offcanvas" id="sidebar">
+            <ul class="nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="head_of_department_dashboard.php">
+                        <i class="icon-grid menu-icon"></i>
+                        <span class="menu-title">Home</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_requests.php">
+                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
+                        <span class="menu-title">Leave Requests</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="users.php">
+                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
+                        <span class="menu-title">Users</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="profile.php">
+                        <i class="icon-head menu-icon"></i>
+                        <span class="menu-title">Profile</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="../logout.php">
+                        <i class="mdi mdi-logout menu-icon"></i>
+                        <span class="menu-title">Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
 
             <div class="main-panel">
                 <div class="content-wrapper">

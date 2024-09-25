@@ -14,12 +14,6 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Employee') {
 
 $id = $_SESSION['user_id'];
 
-$emergency_id = null;
-
-if (isset($_GET['id']) && !empty($_GET['id'])) {
-    $emergency_id = $_GET['id'];
-}
-
 // Fetch existing data
 $query = "SELECT * FROM users WHERE id = ?";
 $stmt = $conn->prepare($query);
@@ -58,88 +52,104 @@ $officer_result = $conn->query($officer_query);
 $supervisor_query = "SELECT id, name FROM users WHERE role = 'Supervising Officer'";
 $supervisor_result = $conn->query($supervisor_query);
 
+// Function to fetch user name by user ID
+function fetchUserName($user_id, $conn)
+{
+    $query = "SELECT name FROM users WHERE id = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0) {
+        $user = $result->fetch_assoc();
+        return $user['name'];
+    }
+    return 'Unknown';
+}
+
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $user_id = $_SESSION['user_id'];
-    $leaveDates = $_POST['leaveDates'];
-    $leaveReason = $_POST['leaveReason'];
-    $firstAppointmentDate = $_POST['firstAppointmentDate'];
+    $empOnLeave = $_POST['empOnLeave'];
+    $reason = $_POST['reason'];
     $commenceLeaveDate = $_POST['commenceLeaveDate'];
     $resumeDate = $_POST['resumeDate'];
-    $addressDuringLeave = $_POST['addressDuringLeave'];
     $actingOfficer = !empty($_POST['actingOfficer']) ? $_POST['actingOfficer'] : NULL;
     $supervisingOfficer = $_POST['supervisingOfficer'];
-    $fullReason = $_POST['fullReason'];
-    $submissionDate = date('Y-m-d H:i:s');
+    $submissionDate = date('Y-m-d');
 
     // Validate required fields
-    if (empty($leaveDates) || empty($leaveReason) || empty($firstAppointmentDate) || empty($commenceLeaveDate) || empty($resumeDate) || empty($addressDuringLeave) || empty($supervisingOfficer) || empty($fullReason)) {
+    if (empty($empOnLeave) || empty($reason) || empty($commenceLeaveDate) || empty($supervisingOfficer)) {
         die("Please fill in all required fields.");
     }
 
+    // user_id	emp_on_leave	reason	commence_leave_date	resume_date	acting_officer	supervising_officer	submission_date	
+
     // Prepare the SQL statement
-    $query = "INSERT INTO leave_applications (user_id, leaveDates, leaveReason, firstAppointmentDate, commenceLeaveDate, resumeDate, addressDuringLeave, actingOfficer, supervisingOfficer, submissionDate, fullReason, status) 
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
+    $query = "INSERT INTO emergency_leave (user_id, emp_on_leave, reason, commence_leave_date, resume_date, acting_officer, supervising_officer, submission_date, status ) 
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)";
 
     if ($stmt = $conn->prepare($query)) {
-        $stmt->bind_param("iisssssiiss", $user_id, $leaveDates, $leaveReason, $firstAppointmentDate, $commenceLeaveDate, $resumeDate, $addressDuringLeave, $actingOfficer, $supervisingOfficer, $submissionDate, $fullReason);
+
+        $stmt->bind_param("iisssiis", $user_id, $empOnLeave, $reason, $commenceLeaveDate, $resumeDate, $actingOfficer, $supervisingOfficer, $submissionDate);
 
         if ($stmt->execute()) {
-            // Get the last inserted ID (leave_application_id)
-            $application_id = $conn->insert_id;
 
-            // Now insert into the request_status table with the application_id
-            $query = "INSERT INTO request_status (leave_application_id) VALUES (?)";
-            $stmt = $conn->prepare($query);
-            $stmt->bind_param("i", $application_id);
+            if ($actingOfficer != null) {
+                // Fetch existing data (email and name)
+                $query = "SELECT email, name FROM users WHERE id = ?";
+                $stmt = $conn->prepare($query);
+                $stmt->bind_param("i", $actingOfficer);
+                $stmt->execute();
+                $result = $stmt->get_result();
 
-            if ($stmt->execute()) {
-
-                if ($emergency_id != null) {
-                    $query = "UPDATE emergency_leave SET status = 1 WHERE id = ?";
-                    $stmt = $conn->prepare($query);
-                    $stmt->bind_param("i", $emergency_id);
-                    $stmt->execute();
-                }
-                
-
-                if ($actingOfficer != null) {
-                    // Fetch existing data (email and name)
-                    $query = "SELECT email, name FROM users WHERE id = ?";
-                    $stmt = $conn->prepare($query);
-                    $stmt->bind_param("i", $actingOfficer);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-
-                    if ($result->num_rows > 0) {
-                        $row = $result->fetch_assoc(); // Fetch the row as an associative array
-                        $receiverEmail = $row['email']; // Access the 'email' field
-                        $receiverName = $row['name']; // Access the 'name' field
-                    }
-                } else {
-                    // Fetch existing data (email and name)
-                    $query = "SELECT email, name FROM users WHERE id = ?";
-                    $stmt = $conn->prepare($query);
-                    $stmt->bind_param("i", $supervisingOfficer);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-
-                    if ($result->num_rows > 0) {
-                        $row = $result->fetch_assoc(); // Fetch the row as an associative array
-                        $receiverEmail = $row['email']; // Access the 'email' field
-                        $receiverName = $row['name']; // Access the 'name' field
-                    }
+                if ($result->num_rows > 0) {
+                    $row = $result->fetch_assoc(); // Fetch the row as an associative array
+                    $actingOfficerEmail = $row['email']; // Access the 'email' field
+                    $actingOfficerName = $row['name']; // Access the 'name' field
                 }
 
-                $body = leaveRequestEmailBody($user['name'], $leaveReason, $commenceLeaveDate, $resumeDate, $fullReason);
-                sendMail($receiverEmail, $receiverName, 'Leave Request from ' . $user['name'], $body);
-
-                $success_message = "Leave application submitted successfully!";
-                header("Location: leave_application_history.php");
-                exit();
-            } else {
-                $error_message = $conn->error;
+                $body = emergencyLeaveEmailBody($user['name'], fetchUserName($empOnLeave, $conn), $commenceLeaveDate, $resumeDate, $reason);
+                sendMail($actingOfficerEmail, $actingOfficerName, 'Emergency leave request for ' . fetchUserName($empOnLeave, $conn), $body);
             }
+
+
+            // Fetch existing data (email and name)
+            $query = "SELECT email, name FROM users WHERE id = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("i", $supervisingOfficer);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows > 0) {
+                $row = $result->fetch_assoc(); // Fetch the row as an associative array
+                $supervisingOfficerEmail = $row['email']; // Access the 'email' field
+                $supervisingOfficerName = $row['name']; // Access the 'name' field
+            }
+
+            $body = emergencyLeaveEmailBody($user['name'], fetchUserName($empOnLeave, $conn), $commenceLeaveDate, $resumeDate, $reason);
+            sendMail($supervisingOfficerEmail, $supervisingOfficerName, 'Emergency leave request for ' . fetchUserName($empOnLeave, $conn), $body);
+
+            // Fetch existing data (email and name)
+            $query = "SELECT email, name FROM users WHERE id = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("i", $empOnLeave);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows > 0) {
+                $row = $result->fetch_assoc(); // Fetch the row as an associative array
+                $empOnLeaveEmail = $row['email']; // Access the 'email' field
+                $empOnLeaveName = $row['name']; // Access the 'name' field
+            }
+
+            $body = emergencyLeaveEmailBody($user['name'], fetchUserName($empOnLeave, $conn), $commenceLeaveDate, $resumeDate, $reason);
+            sendMail($empOnLeaveEmail, $empOnLeaveName, $user['name'] .' Placed emergency leave request for you ', $body);
+
+            $success_message = "Leave application submitted successfully!";
+            header("Location: leave_application_history.php");
+            exit();
         } else {
             $error_message = $stmt->error;
         }
@@ -270,93 +280,50 @@ $conn->close();
                 <?php endif; ?>
                 <header>
                     <h3 class="mb-4">
-                        Application For Leave
-                        <!-- Welcome, <?php echo htmlspecialchars($username); ?>! -->
+                        Emergency Leave Request
                     </h3>
                 </header>
 
                 <!-- Registration Form -->
                 <form method="post" action="" class="needs-validation" novalidate>
+                    <hr>
+                    <p class="card-description text-secondary">Leave Request Submitter</p>
                     <div class="form-group">
                         <label for="name">Name</label>
                         <input type="text" class="form-control" id="name" name="name" value="<?php echo htmlspecialchars($user['name']); ?>" disabled required>
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label for="designation">Designation</label>
-                            <input type="text" class="form-control" id="designation" name="designation" value="<?php echo htmlspecialchars($user['designation']); ?>" disabled required>
-                        </div>
-                        <div class="form-group col-md-6">
                             <label for="dept">Ministry/Dept.</label>
                             <input type="text" class="form-control" id="dept" name="dept" value="<?php echo htmlspecialchars($user['dept']); ?>" disabled required>
                         </div>
-                    </div>
-
-                    <div class="form-row">
                         <div class="form-group col-md-6">
                             <label for="designation">Date</label>
                             <input type="date" id="date" class="form-control" name="date" value="<?php echo $currentDate; ?>" disabled>
                         </div>
                     </div>
 
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label for="leaveDates">Number of days leave applied for</label>
-                            <input type="number" id="leaveDates" class="form-control" name="leaveDates" required>
-                            <div class="invalid-feedback">Please enter the number of days leave applied for.</div>
-                        </div>
-
-                        <!-- <small id="passwordHelpBlock" class="form-text text-muted"> Your  </small> -->
-                        <div class="form-group col-md-6">
-                            <label for="availableLeaves">Available leaves for current year</label>
-                            <input type="text" id="availableLeaves" class="form-control" name="availableLeaves" value="Casual - <?php echo htmlspecialchars($avLeaves['casual_leaves']); ?>    |   Rest - <?php echo htmlspecialchars($avLeaves['rest_leaves']); ?>" disabled>
-                            <div class="invalid-feedback">Please enter the designation.</div>
-                        </div>
+                    <hr>
+                    <p class="card-description text-secondary">Employee on Leave</p>
+                    <div class="form-group">
+                        <label for="empOnLeave">Name of employee who is absense</label>
+                        <select class="form-control" id="empOnLeave" name="empOnLeave" required>
+                            <option value="">Select the employee who is absense</option>
+                            <?php
+                            if ($employees_result->num_rows > 0) {
+                                while ($employee = $employees_result->fetch_assoc()) {
+                                    echo '<option value="' . htmlspecialchars($employee['id']) . '">' . htmlspecialchars($employee['name']) . '</option>';
+                                }
+                            }
+                            ?>
+                        </select>
+                        <div class="invalid-feedback">Please select the employee Who is absense.</div>
                     </div>
 
                     <div class="form-group">
-                        <label for="leaveReason">Reason</label>
-                        <div class="form-row">
-                            <div class="col">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="leaveReason" id="radio1" value="casual" required>
-                                    <label class="form-check-label" for="radio1">
-                                        Casual
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="leaveReason" id="radio2" value="rest" required>
-                                    <label class="form-check-label" for="radio2">
-                                        Rest
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="leaveReason" id="radio3" value="other" required>
-                                    <label class="form-check-label" for="radio3">
-                                        Other
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="invalid-feedback">Please select the reason.</div>
-                    </div>
-
-                    <div class="form-group">
-                        <!-- <label for="fullReason">Reasons for leave</label> -->
-                        <textarea class="form-control" id="fullReason" name="fullReason" rows="1" placeholder="Type your reason here..." required></textarea>
+                        <label for="reason">Reasons for leave</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="1" placeholder="Type reason here..." required></textarea>
                         <div class="invalid-feedback">Please enter the reasons for leave.</div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label for="firstAppointmentDate">Date of First Appoinment</label>
-                            <input type="date" class="form-control" id="firstAppointmentDate" name="firstAppointmentDate" required>
-                            <div class="invalid-feedback">Please enter the date of first appoinment.</div>
-                        </div>
                     </div>
 
                     <div class="form-row">
@@ -372,13 +339,8 @@ $conn->close();
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="addressDuringLeave">Address During Leave</label>
-                        <textarea class="form-control" id="addressDuringLeave" name="addressDuringLeave" rows="2" placeholder="Type your address During Leave here..." required></textarea>
-                        <div class="invalid-feedback">Please enter the address During Leave.</div>
-                    </div>
-
-
+                    <hr>
+                    <p class="card-description text-secondary">Authorized Representative</p>
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label for="actingOfficer">Officer Acting</label>
