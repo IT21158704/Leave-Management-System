@@ -114,11 +114,7 @@ $user_id = $_SESSION['user_id'];
             <div class="content-wrapper">
                 <header>
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3>Emergency Leaves for you</h3>
-                        <div>
-                            <a href="emergencySubmissions.php" class="btn btn-primary me-2">My Submitions</a>
-                            <a href="emergencyLeaveForm.php" class="btn btn-primary">New</a>
-                        </div>
+                        <h3>Emergency Leaves by you</h3>
                     </div>
 
                 </header>
@@ -135,9 +131,9 @@ $user_id = $_SESSION['user_id'];
                 $query = "
     SELECT la.*, u.name AS user_name, s.name AS supervising_officer_name
     FROM emergency_leave la
-    JOIN users u ON la.user_id = u.id
+    JOIN users u ON la.emp_on_leave = u.id
     JOIN users s ON la.supervising_officer = s.id
-    WHERE la.emp_on_leave = '$user_id'
+    WHERE la.user_id = '$user_id'
 ORDER BY la.id DESC;
 ";
                 $result = $conn->query($query);
@@ -151,7 +147,7 @@ ORDER BY la.id DESC;
                     echo '<thead class="thead-dark">
             <tr>
                 <th scope="col">ID</th>
-                <th scope="col">Submitted By</th>
+                <th scope="col">Submitted For</th>
                 <th scope="col">Commence Leave Date</th>
                 <th scope="col">Resume Date</th>
                 <th scope="col">Leave Application</th>
@@ -170,7 +166,7 @@ ORDER BY la.id DESC;
 
                         // Check the status and display appropriate text
                         if ($row['status'] == 0) {
-                            echo '<span style="color: red;">Need to submit application</span>';
+                            echo '<span style="color: red;">Not submit application yet</span>';
                         } elseif ($row['status'] == 1) {
                             echo 'Application Submitted';
                         } else {
@@ -179,7 +175,7 @@ ORDER BY la.id DESC;
 
                         echo '</td>
                 <td>
-                    <a class="btn btn-primary btn-sm" href="viewEmergencyLeave.php?id=' . htmlspecialchars($row['id']) . '">View Details</a>
+                    <a class="btn btn-primary btn-sm" href="viewEmergencyLeave.php?id=' . htmlspecialchars($row['id']) . ' &status=null">View Details</a>
                 </td>
               </tr>';
                     }

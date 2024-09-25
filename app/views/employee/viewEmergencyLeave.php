@@ -13,6 +13,8 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Employee') {
 
 $id = $_GET['id'];
 
+$emergStatus = isset($_GET['status']) ? $_GET['status'] : 'notnull';
+
 // Fetch existing data
 $query = "SELECT * FROM emergency_leave WHERE id = ?";
 $stmt = $conn->prepare($query);
@@ -186,10 +188,12 @@ $conn->close();
                         </div>
                     </div>
                     <?php
-                    if ($emergency_leave['status'] == 0) {
+                    if($emergStatus == 'null'){
+                        echo '<a class="btn btn-secondary float-right" href="emergencySubmissions.php">Back</a>';
+                    }elseif ($emergency_leave['status'] == 0) {
                         echo '<a class="btn btn-primary float-right" href="leave_application.php?id=' . htmlspecialchars($emergency_leave['id']) . '">Submit Leave Application</a>';
                     } else {
-                        echo '<a class="btn btn-primary float-right" href="emergencyLeaves.php">Back</a>';
+                        echo '<a class="btn btn-secondary float-right" href="emergencyLeaves.php">Back</a>';
                     }
                     ?>
 

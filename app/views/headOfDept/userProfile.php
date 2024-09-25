@@ -1,5 +1,6 @@
 <?php
 
+require('../../assets/vendors/fpdf/fpdf.php');
 include('../../../config/config.php');
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -84,6 +85,72 @@ if ($result->num_rows > 0) {
     $user = $result->fetch_assoc();
 } else {
     die("Record not found");
+}
+
+// PDF Generation
+if (isset($_POST['generate_pdf'])) {
+    $pdf = new FPDF();
+    $pdf->AddPage();
+
+    // Title
+    $pdf->SetFont('Arial', 'B', 16);
+    $pdf->Cell(40, 10, 'Ministry of Fisheries');
+    $pdf->Ln(10);
+
+    // User Info
+    $pdf->SetFont('Arial', '', 12);
+    $pdf->Cell(40, 10, 'User: ' . $user['name']);
+    $pdf->Ln(7);
+    $pdf->Cell(40, 10, 'NIC: ' . $user['nic']);
+    $pdf->Ln(7);
+    $pdf->Cell(40, 10, 'Date: ' . date('Y-m-d'));
+    $pdf->Ln(10);
+
+    // Leave Info
+    $pdf->SetFont('Arial', 'B', 12);
+    $pdf->Cell(40, 10, 'Leave Summary');
+    $pdf->Ln(7);
+
+    $pdf->SetFont('Arial', '', 12);
+    $pdf->Cell(40, 10, 'Casual Leaves: ' . $casual);
+    $pdf->Ln(7);
+    $pdf->Cell(40, 10, 'Rest Leaves: ' . $rest);
+    $pdf->Ln(7);
+    $pdf->Cell(40, 10, 'Total Leaves: ' . ($casual + $rest));
+    $pdf->Ln(10);
+
+    // Table for approved leaves
+    $pdf->SetFont('Arial', 'B', 12);
+    $pdf->Cell(40, 10, 'Approved Leaves');
+    $pdf->Ln(7);
+
+    $pdf->SetFont('Arial', 'B', 10);
+    $pdf->Cell(40, 7, 'Leave ID', 1);
+    $pdf->Cell(40, 7, 'Date', 1);
+    $pdf->Cell(40, 7, 'Number of Days', 1);
+    $pdf->Cell(60, 7, 'Reason/Dept', 1);
+    $pdf->Ln();
+
+    // Fetch data from leave applications
+    $query = "SELECT * FROM leave_applications WHERE user_id = $id AND status = 'approved' ORDER BY id DESC";
+    $result = $conn->query($query);
+
+    if ($result->num_rows > 0) {
+        $pdf->SetFont('Arial', '', 10);
+        while ($row = $result->fetch_assoc()) {
+            $pdf->Cell(40, 7, $row['id'], 1);
+            $pdf->Cell(40, 7, $row['submissionDate'], 1);
+            $pdf->Cell(40, 7, $row['leaveDates'], 1);
+            $pdf->Cell(60, 7, $row['leaveReason'], 1);
+            $pdf->Ln();
+        }
+    } else {
+        $pdf->Cell(180, 7, 'No approved leaves found', 1, 1, 'C');
+    }
+
+    // Output the PDF
+    $pdf->Output('I', 'leave_report_' . $user['nic'] . '.pdf');
+    exit();
 }
 
 ?>
@@ -212,9 +279,7 @@ if ($result->num_rows > 0) {
                                         <p class="card-title">Approved leaves</p>
                                         <div class="d-flex">
                                             <div class="mb-3 mr-2">
-                                                <button id="generateReport">Generate Report</button>
-
-                                                <select class="form-control" id="monthPicker">
+                                                <select class="btn btn-outline" id="monthPicker">
                                                     <option value="">Select Month</option>
                                                     <?php
                                                     foreach ($months as $number => $name) {
@@ -224,8 +289,8 @@ if ($result->num_rows > 0) {
                                                 </select>
                                             </div>
 
-                                            <div class="mb-3">
-                                                <select class="form-control" id="yearPicker">
+                                            <div class="mb-3 mr-2">
+                                                <select class="btn btn-outline" id="yearPicker">
                                                     <option value="">Select Year</option>
                                                     <?php
                                                     $currentYear = date("Y");
@@ -234,6 +299,11 @@ if ($result->num_rows > 0) {
                                                     }
                                                     ?>
                                                 </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <form method="POST">
+                                                    <button class="btn btn-outline-info btn-icon-text" name="generate_pdf"> Print PDF <i class="ti-printer btn-icon-append"></i></button>
+                                                </form>
                                             </div>
                                         </div>
                                     </div>
@@ -329,7 +399,9 @@ if ($result->num_rows > 0) {
 
         // Generate PDF report from filtered table data
         async function generateReport() {
-            const { jsPDF } = window.jspdf;
+            const {
+                jsPDF
+            } = window.jspdf;
             const doc = new jsPDF();
 
             // Title
