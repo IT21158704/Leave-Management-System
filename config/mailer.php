@@ -265,6 +265,69 @@ function newUserEmailBody($userName, $nic, $password = null) {
     ';
 }
 
+function emergencyLeaveEmailBody($submitterName, $empOnLeave, $commenceLeaveDate, $resumeDate, $reason) {
+    return '
+    <html>
+    <head>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                background-color: #f4f4f4;
+            }
+            .email-container {
+                max-width: 600px;
+                margin: 20px auto;
+                background-color: #ffffff;
+                padding: 20px;
+                border: 1px solid #e0e0e0;
+                box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+            }
+            .email-header {
+                background-color: #0073e6;
+                color: #ffffff;
+                padding: 10px;
+                text-align: center;
+                font-size: 24px;
+            }
+            .email-body {
+                padding: 20px;
+                font-size: 16px;
+                line-height: 1.6;
+            }
+            .email-body h2 {
+                color: #0073e6;
+            }
+            .email-footer {
+                margin-top: 20px;
+                font-size: 14px;
+                color: #888888;
+                text-align: center;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="email-container">
+            <div class="email-header">
+                Emergency Leave Request
+            </div>
+            <div class="email-body">
+                <h2>Hello,</h2>
+                <p><strong>' . htmlspecialchars($submitterName) . '</strong> has submitted an emergency leave request on behalf of <strong>' . htmlspecialchars($empOnLeave) . '</strong>.</p>
+                <p><strong>Commence Date:</strong> ' . htmlspecialchars($commenceLeaveDate) . '</p>
+                <p><strong>Resume Date:</strong> ' . htmlspecialchars($resumeDate) . '</p>
+                <p><strong>Reason for Leave:</strong> ' . htmlspecialchars($reason) . '</p>
+            </div>
+            <div class="email-footer">
+                <p>Leave Management System | Ministry of Fisheries</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    ';
+}
+
 // $body = newUserEmailBody('Nadun Dilshan', 'nadun.dilshan.733@gmail.com', 'temporaryPassword123');
 // sendMail('nadun.dilshan.733@gmail.com', 'Nadun Dilshan', 'Welcome to Leave Management System', $body);
 

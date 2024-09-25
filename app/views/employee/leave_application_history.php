@@ -30,7 +30,7 @@ $user_id = $_SESSION['user_id'];
     <link rel="stylesheet" href="../../assets/vendors/ti-icons/css/themify-icons.css">
     <link rel="stylesheet" type="text/css" href="../../assets/js/select.dataTables.min.css">
     <link rel="stylesheet" href="../../assets/css/style.css">
-    <link rel="shortcut icon" href="../../assets/images/favicon.png" />
+    <link rel="shortcut icon" href="../../assets/images/favicon.svg" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
@@ -88,6 +88,12 @@ $user_id = $_SESSION['user_id'];
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="emergencyLeaves.php">
+                        <i class="mdi mdi-alert-octagon-outline menu-icon"></i>
+                        <span class="menu-title">Emergency Leave</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="profile.php">
                         <i class="icon-head menu-icon"></i>
                         <span class="menu-title">Profile</span>
@@ -116,7 +122,8 @@ $user_id = $_SESSION['user_id'];
 
                 <?php
                 // Fetch data from database
-                $query = "SELECT * FROM leave_applications WHERE user_id = $user_id";
+                $query = "SELECT * FROM leave_applications WHERE user_id = $user_id 
+                ORDER BY id DESC;";
                 $result = $conn->query($query);
 
                 if ($result->num_rows > 0) {

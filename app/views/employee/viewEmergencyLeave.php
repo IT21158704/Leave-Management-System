@@ -11,25 +11,27 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Employee') {
     exit();
 }
 
-$id = $_SESSION['user_id'];
+$id = $_GET['id'];
 
 // Fetch existing data
-$query = "SELECT * FROM users WHERE id = ?";
+$query = "SELECT * FROM emergency_leave WHERE id = ?";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("i", $id);
 $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
-    $user = $result->fetch_assoc();
+    $emergency_leave = $result->fetch_assoc();
 } else {
     die("Record not found");
 }
 
+$conn->close();
+
 ?>
 
 <head>
-    <!-- Required meta tags -->
+    <!-- disabled meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title><?php echo htmlspecialchars($_SESSION['role']); ?></title>
@@ -69,6 +71,7 @@ if ($result->num_rows > 0) {
             </button>
         </div>
     </nav>
+
     <!-- partial -->
     <div class="container-fluid page-body-wrapper">
         <!-- partial:partials/_sidebar.html -->
@@ -118,51 +121,100 @@ if ($result->num_rows > 0) {
                 </li>
             </ul>
         </nav>
-        <!-- partial -->
+
         <div class="main-panel">
             <div class="content-wrapper">
-                <div class="container mt-4 mb-4 d-flex justify-content-center">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex flex-column align-items-center text-center">
-                                <img src="../../assets/images/user.svg" alt="Admin" class="rounded-circle" width="150">
-                                <div class="mt-3">
-                                    <h4> <?php echo htmlspecialchars($user['name']); ?> </h4>
-                                    <p class="text-secondary mb-1">@<?php echo htmlspecialchars($user['email']); ?> </p>
-                                    <p class="text-secondary mb-1"><?php echo htmlspecialchars($user['nic']); ?> </p>
-                                    <p class="text-secondary mb-1"> <?php echo htmlspecialchars($user['designation']); ?> </p>
-                                    <p class="text-muted font-size-sm"><?php echo htmlspecialchars($user['dept']); ?> </p>
-                                    <a href="password_reset.php?id=<?php echo htmlspecialchars($user['id']); ?>" class="btn btn-outline-secondary">Reset Password</a>
-                                </div>
-                            </div>
+                <header>
+                    <h3 class="mb-4">
+                        Emergency Leave Request
+                    </h3>
+                </header>
+
+                <!-- Registration Form -->
+                <form method="post" action="" class="needs-validation" novalidate>
+                    <hr>
+                    <p class="card-description text-secondary">Leave Request Submitter</p>
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" class="form-control" id="name" value="<?php echo htmlspecialchars($emergency_leave['user_id']); ?>" disabled>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="dept">Ministry/Dept.</label>
+                            <input type="text" class="form-control" id="dept" value="<?php echo htmlspecialchars($emergency_leave['user_id']); ?>" disabled>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="designation">Date</label>
+                            <input type="date" id="date" class="form-control" name="date" value="<?php echo htmlspecialchars($emergency_leave['submission_date']); ?>" disabled>
                         </div>
                     </div>
-                </div>
+
+                    <hr>
+                    <p class="card-description text-secondary">Employee on Leave</p>
+                    <div class="form-group">
+                        <label for="empOnLeave">Name of employee who is absense</label>
+                        <input type="text" class="form-control" id="empOnLeave" name="empOnLeave" value="<?php echo htmlspecialchars($emergency_leave['submission_date']); ?>" disabled>
+                        <!-- $_SESSION['user_id'] -->
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reason">Reasons for leave</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="1" disabled><?php echo htmlspecialchars($emergency_leave['reason']); ?></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="commenceLeaveDate ">Date of Commencing Leave</label>
+                            <input type="date" class="form-control" id="commenceLeaveDate" value="<?php echo htmlspecialchars($emergency_leave['submission_date']); ?>" disabled>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="resumeDate">Date of Resumption</label>
+                            <input type="date" class="form-control" id="resumeDate" value="<?php echo htmlspecialchars($emergency_leave['submission_date']); ?>" disabled>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <p class="card-description text-secondary">Authorized Representative</p>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="actingOfficer">Officer Acting</label>
+                            <input type="text" class="form-control" id="actingOfficer" value="<?php echo htmlspecialchars($emergency_leave['acting_officer']); ?>" disabled>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="supervisingOfficer">Supervising Officer</label>
+                            <input type="text" class="form-control" id="supervisingOfficer" value="<?php echo htmlspecialchars($emergency_leave['supervising_officer']); ?>" disabled>
+                        </div>
+                    </div>
+                    <?php
+                    if ($emergency_leave['status'] == 0) {
+                        echo '<a class="btn btn-primary float-right" href="leave_application.php?id=' . htmlspecialchars($emergency_leave['id']) . '">Submit Leave Application</a>';
+                    } else {
+                        echo '<a class="btn btn-primary float-right" href="emergencyLeaves.php">Back</a>';
+                    }
+                    ?>
+
+                </form>
             </div>
-            <!-- partial -->
+            <!-- page-body-wrapper ends -->
         </div>
-        <!-- main-panel ends -->
-    </div>
-    <!-- page-body-wrapper ends -->
-    </div>
-    <!-- container-scroller -->
-    <!-- plugins:js -->
-    <script src="../../assets/vendors/js/vendor.bundle.base.js"></script>
-    <!-- endinject -->
-    <!-- Plugin js for this page -->
-    <script src="../../assets/vendors/chart.js/chart.umd.js"></script>
-    <script src="../../assets/vendors/datatables.net/jquery.dataTables.js"></script>
-    <script src="../../assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js"></script>
-    <script src="../../assets/js/dataTables.select.min.js"></script>
-    <!-- End plugin js for this page -->
-    <!-- inject:js -->
-    <script src="../../assets/js/off-canvas.js"></script>
-    <script src="../../assets/js/template.js"></script>
-    <script src="../../assets/js/settings.js"></script>
-    <script src="../../assets/js/todolist.js"></script>
-    <!-- endinject -->
-    <!-- Custom js for this page-->
-    <script src="../../assets/js/jquery.cookie.js" type="text/javascript"></script>
-    <script src="../../assets/js/dashboard.js"></script>
-    <!-- End custom js for this page-->
+        <!-- container-scroller -->
+        <!-- plugins:js -->
+        <script src="../../assets/vendors/js/vendor.bundle.base.js"></script>
+        <!-- endinject -->
+        <!-- Plugin js for this page -->
+        <script src="../../assets/vendors/chart.js/chart.umd.js"></script>
+        <script src="../../assets/vendors/datatables.net/jquery.dataTables.js"></script>
+        <script src="../../assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js"></script>
+        <script src="../../assets/js/dataTables.select.min.js"></script>
+        <!-- End plugin js for this page -->
+        <!-- inject:js -->
+        <script src="../../assets/js/off-canvas.js"></script>
+        <script src="../../assets/js/template.js"></script>
+        <script src="../../assets/js/settings.js"></script>
+        <script src="../../assets/js/todolist.js"></script>
+        <!-- endinject -->
+        <!-- Custom js for this page-->
+        <script src="../../assets/js/jquery.cookie.js" type="text/javascript"></script>
+        <script src="../../assets/js/dashboard.js"></script>
+        <!-- End custom js for this page-->
 </body>
