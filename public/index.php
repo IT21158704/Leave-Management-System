@@ -22,9 +22,9 @@ switch ($_SESSION['role']) {
     case 'Head of Department':
         header("Location:  ../app/views/headOfDept/head_of_department_dashboard.php");
         break;
-    case 'Officer Acting':
-        header("Location:  ../app/views/officerActing/officer_acting_dashboard.php");
-        break;
+    // case 'Officer Acting':
+    //     header("Location:  ../app/views/officerActing/officer_acting_dashboard.php");
+    //     break;
     case 'Admin':
         header("Location: ../app/views/admin/admin_dashboard.php");
         break;

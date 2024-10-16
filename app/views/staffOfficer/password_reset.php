@@ -87,7 +87,7 @@ $conn->close();
             <nav class="sidebar sidebar-offcanvas" id="sidebar">
                 <ul class="nav">
                     <li class="nav-item">
-                        <a class="nav-link" href="officer_acting_dashboard.php">
+                        <a class="nav-link" href="staff_officer_dashboard.php">
                             <i class="icon-grid menu-icon"></i>
                             <span class="menu-title">Home</span>
                         </a>
@@ -96,6 +96,24 @@ $conn->close();
                         <a class="nav-link" href="leave_requests.php">
                             <i class="mdi mdi-bookmark-outline menu-icon"></i>
                             <span class="menu-title">Leave Requests</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="leave_application.php">
+                            <i class="mdi mdi-note-plus-outline menu-icon"></i>
+                            <span class="menu-title">Leave Application</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="leave_application_history.php">
+                            <i class="mdi mdi-history menu-icon"></i>
+                            <span class="menu-title">Leave History</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="emergencyLeaves.php">
+                            <i class="mdi mdi-alert-octagon-outline menu-icon"></i>
+                            <span class="menu-title">Emergency Leave</span>
                         </a>
                     </li>
                     <li class="nav-item">

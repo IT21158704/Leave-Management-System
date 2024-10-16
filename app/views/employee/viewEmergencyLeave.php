@@ -28,6 +28,47 @@ if ($result->num_rows > 0) {
     die("Record not found");
 }
 
+$query = "SELECT * FROM users WHERE id = ?";
+$stmt = $conn->prepare($query);
+$stmt->bind_param("i", $emergency_leave['user_id']);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows > 0) {
+    $submitter = $result->fetch_assoc();
+} else {
+    die("Record not found");
+}
+
+$query = "SELECT * FROM users WHERE id = ?";
+$stmt = $conn->prepare($query);
+$stmt->bind_param("i", $emergency_leave['emp_on_leave']);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows > 0) {
+    $emponleave = $result->fetch_assoc();
+} else {
+    die("Record not found");
+}
+
+function fetchUserName($user_id, $conn)
+{
+    $query = "SELECT name FROM users WHERE id = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0) {
+        $user = $result->fetch_assoc();
+        return $user['name'];
+    }
+    return 'Unknown';
+}
+
+
+$acting_name = fetchUserName($emponleave['acting'], $conn);
+
 $conn->close();
 
 ?>
@@ -138,12 +179,12 @@ $conn->close();
                     <p class="card-description text-secondary">Leave Request Submitter</p>
                     <div class="form-group">
                         <label for="name">Name</label>
-                        <input type="text" class="form-control" id="name" value="<?php echo htmlspecialchars($emergency_leave['user_id']); ?>" disabled>
+                        <input type="text" class="form-control" id="name" value="<?php echo htmlspecialchars($submitter['name']); ?>" disabled>
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label for="dept">Ministry/Dept.</label>
-                            <input type="text" class="form-control" id="dept" value="<?php echo htmlspecialchars($emergency_leave['user_id']); ?>" disabled>
+                            <input type="text" class="form-control" id="dept" value="<?php echo htmlspecialchars($submitter['dept']); ?>" disabled>
                         </div>
                         <div class="form-group col-md-6">
                             <label for="designation">Date</label>
@@ -155,7 +196,7 @@ $conn->close();
                     <p class="card-description text-secondary">Employee on Leave</p>
                     <div class="form-group">
                         <label for="empOnLeave">Name of employee who is absense</label>
-                        <input type="text" class="form-control" id="empOnLeave" name="empOnLeave" value="<?php echo htmlspecialchars($emergency_leave['submission_date']); ?>" disabled>
+                        <input type="text" class="form-control" id="empOnLeave" name="empOnLeave" value="<?php echo htmlspecialchars($emponleave['name']); ?>" disabled>
                         <!-- $_SESSION['user_id'] -->
                     </div>
 
@@ -171,7 +212,7 @@ $conn->close();
                         </div>
                         <div class="form-group col-md-6">
                             <label for="resumeDate">Date of Resumption</label>
-                            <input type="date" class="form-control" id="resumeDate" value="<?php echo htmlspecialchars($emergency_leave['submission_date']); ?>" disabled>
+                            <input type="date" class="form-control" id="resumeDate" value="<?php echo htmlspecialchars($emergency_leave['resume_date']); ?>" disabled>
                         </div>
                     </div>
 
@@ -180,20 +221,33 @@ $conn->close();
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label for="actingOfficer">Officer Acting</label>
-                            <input type="text" class="form-control" id="actingOfficer" value="<?php echo htmlspecialchars($emergency_leave['acting_officer']); ?>" disabled>
-                        </div>
-                        <div class="form-group col-md-6">
-                            <label for="supervisingOfficer">Supervising Officer</label>
-                            <input type="text" class="form-control" id="supervisingOfficer" value="<?php echo htmlspecialchars($emergency_leave['supervising_officer']); ?>" disabled>
+                            <input type="text" class="form-control" id="actingOfficer" value="<?php echo htmlspecialchars($acting_name); ?>" disabled>
                         </div>
                     </div>
+
                     <?php
-                    if($emergStatus == 'null'){
+                    if ($emergStatus == 'null') {
                         echo '<a class="btn btn-secondary float-right" href="emergencySubmissions.php">Back</a>';
-                    }elseif ($emergency_leave['status'] == 0) {
-                        echo '<a class="btn btn-primary float-right" href="leave_application.php?id=' . htmlspecialchars($emergency_leave['id']) . '">Submit Leave Application</a>';
                     } else {
-                        echo '<a class="btn btn-secondary float-right" href="emergencyLeaves.php">Back</a>';
+                        // Get the current date
+                        $currentDate = new DateTime();
+                        $submissionDate = new DateTime($emergency_leave['submission_date']);
+
+                        // Calculate the difference between the current date and the submission date
+                        $interval = $submissionDate->diff($currentDate)->days;
+
+                        // Check if the submission date is 2 days behind the current date
+                        if ($interval >= 2) {
+                            $med_value = 1;
+                        } else {
+                            $med_value = 0;
+                        }
+
+                        if ($emergency_leave['status'] == 0) {
+                            echo '<a class="btn btn-primary float-right" href="leave_application.php?id=' . htmlspecialchars($emergency_leave['id']) . '&med=' . $med_value . '">Submit Leave Application</a>';
+                        } else {
+                            echo '<a class="btn btn-secondary float-right" href="emergencyLeaves.php">Back</a>';
+                        }
                     }
                     ?>
 

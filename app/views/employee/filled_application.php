@@ -58,8 +58,20 @@ function fetchUserName($user_id, $conn)
 
 // Fetch names for replacement, actingOfficer, and supervisingOfficer
 $replacement_name = fetchUserName($application['replacement'], $conn);
-$acting_officer_name = fetchUserName($application['actingOfficer'], $conn);
-$supervising_officer_name = fetchUserName($application['supervisingOfficer'], $conn);
+
+$file_path = '';
+
+// Prepare the SQL query to get the file path
+$sql = "SELECT file_path FROM medicals WHERE application_id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $application_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+// Fetch the file path
+if ($row = $result->fetch_assoc()) {
+    $file_path = $row['file_path'];
+}
 
 $conn->close();
 
@@ -207,7 +219,7 @@ $conn->close();
                             <input type="text" class="form-control" id="designation" name="designation" value="<?php echo htmlspecialchars($user['designation']); ?>" disabled required>
                         </div>
                         <div class="form-group col-md-6">
-                            <label for="dept">Ministry/Dept.</label>
+                            <label for="dept">Department</label>
                             <input type="text" class="form-control" id="dept" name="dept" value="<?php echo htmlspecialchars($user['dept']); ?>" disabled required>
                         </div>
                     </div>
@@ -261,28 +273,31 @@ $conn->close();
                         <textarea class="form-control" placeholder="<?php echo htmlspecialchars($application['addressDuringLeave']); ?>" disabled></textarea>
                     </div>
 
-                    <!-- Replacement -->
-                    <div class="form-group">
-                        <label for="replacement">Name of Employee Who Will Act as you</label>
-                        <input type="text" id="replacement" class="form-control"
-                            value="<?php echo ($replacement_name === 'Unknown') ? 'Not assigned yet' : htmlspecialchars($replacement_name); ?>" disabled>
-                    </div>
-
-
+                    <?php if ($file_path): ?>
+                        <div class="form-group">
+                            <label for="addressDuringLeave">Medical Report</label>
+                            <a href="<?php echo htmlspecialchars($file_path); ?>" class="btn btn-secondary form-control" download>Download File</a>
+                        </div>
+                    <?php endif; ?>
 
                     <!-- Acting Officer -->
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label for="actingOfficer">Officer Acting</label>
-                            <input type="text" id="actingOfficer" class="form-control" value="<?php echo ($acting_officer_name === 'Unknown') ? 'Not selected' : htmlspecialchars($acting_officer_name ?? 'Not selected'); ?>" disabled>
-                        </div>
-
-                        <!-- Supervising Officer -->
-                        <div class="form-group col-md-6">
-                            <label for="supervisingOfficer">Supervising Officer</label>
-                            <input type="text" id="supervisingOfficer" class="form-control" value="<?php echo htmlspecialchars($supervising_officer_name); ?>" disabled>
+                            <label for="replacement">Name of Employee Who Will Act as you</label>
+                            <input type="text" id="replacement" class="form-control"
+                                value="<?php echo ($replacement_name === 'Unknown') ? 'Not assigned yet' : htmlspecialchars($replacement_name); ?>" disabled>
                         </div>
                     </div>
+
+
+
+                    <?php if (!empty($application['rejectionReason'])): ?>
+                        <div class="form-group">
+                            <label for="rejectionReason">Rejection Reason</label>
+                            <textarea class="form-control" placeholder="<?php echo htmlspecialchars($application['rejectionReason']); ?>" disabled></textarea>
+                        </div>
+                    <?php endif; ?>
+
 
                     <a href="leave_application_history.php" class="btn btn-secondary float-right ml-2">Back to list</a>
                 </form>

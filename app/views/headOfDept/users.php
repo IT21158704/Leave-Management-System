@@ -69,12 +69,6 @@ $nic = $_SESSION['nic'];
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="leave_requests.php">
-                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
-                        <span class="menu-title">Leave Requests</span>
-                    </a>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link" href="users.php">
                         <i class="mdi mdi-bookmark-outline menu-icon"></i>
                         <span class="menu-title">Users</span>
@@ -109,7 +103,7 @@ $nic = $_SESSION['nic'];
 
                 <?php
                 // Fetch data from database
-                $query = "SELECT * FROM users WHERE role = 'Employee'";
+                $query = "SELECT * FROM users WHERE role != 'Admin'";
                 $result = $conn->query($query);
 
                 if ($result->num_rows > 0) {

@@ -47,8 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 case 'Head of Department':
                     header("Location: ./headOfDept/head_of_department_dashboard.php");
                     break;
-                case 'Officer Acting':
-                    header("Location: ./officerActing/officer_acting_dashboard.php");
+                case 'Staff Officer':
+                    header("Location: ./staffOfficer/staff_officer_dashboard.php");
                     break;
                 default:
                     $error_message = 'Role not recognized.';

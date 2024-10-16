@@ -29,6 +29,17 @@ if ($result->num_rows > 0) {
 $currentDate = date("Y-m-d");
 $currentTime = date("h:i:s A");
 
+$sql = "SELECT COUNT(*) as total_records FROM users WHERE role = 'Employee'";
+$result = $conn->query($sql);
+
+if ($result->num_rows > 0) {
+    // Fetch the count and store it in a variable
+    $count = $result->fetch_assoc();
+    $total_records = $count['total_records'];
+} else {
+    echo "No records found.";
+}
+
 ?>
 
 <head>
@@ -84,12 +95,6 @@ $currentTime = date("h:i:s A");
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="leave_requests.php">
-                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
-                        <span class="menu-title">Leave Requests</span>
-                    </a>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link" href="users.php">
                         <i class="mdi mdi-bookmark-outline menu-icon"></i>
                         <span class="menu-title">Users</span>
@@ -134,38 +139,8 @@ $currentTime = date("h:i:s A");
                         <div class="col-md-6 mb-4 stretch-card transparent">
                             <div class="card card-tale">
                                 <div class="card-body">
-                                    <p class="mb-4">Today’s Bookings</p>
-                                    <p class="fs-30 mb-2">4006</p>
-                                    <p>10.00% (30 days)</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-4 stretch-card transparent">
-                            <div class="card card-dark-blue">
-                                <div class="card-body">
-                                    <p class="mb-4">Total Bookings</p>
-                                    <p class="fs-30 mb-2">61344</p>
-                                    <p>22.00% (30 days)</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-4 mb-lg-0 stretch-card transparent">
-                            <div class="card card-light-blue">
-                                <div class="card-body">
-                                    <p class="mb-4">Number of Meetings</p>
-                                    <p class="fs-30 mb-2">34040</p>
-                                    <p>2.00% (30 days)</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 stretch-card transparent">
-                            <div class="card card-light-danger">
-                                <div class="card-body">
-                                    <p class="mb-4">Number of Clients</p>
-                                    <p class="fs-30 mb-2">47033</p>
-                                    <p>0.22% (30 days)</p>
+                                    <p class="mb-4">Total Employees</p>
+                                    <p class="fs-30 mb-2"><?php echo htmlspecialchars($total_records); ?></p>
                                 </div>
                             </div>
                         </div>

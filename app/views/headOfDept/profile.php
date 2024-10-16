@@ -81,12 +81,6 @@ if ($result->num_rows > 0) {
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="leave_requests.php">
-                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
-                        <span class="menu-title">Leave Requests</span>
-                    </a>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link" href="users.php">
                         <i class="mdi mdi-bookmark-outline menu-icon"></i>
                         <span class="menu-title">Users</span>
