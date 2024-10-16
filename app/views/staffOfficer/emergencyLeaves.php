@@ -6,30 +6,17 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Officer Acting') {
-    header("Location: ../logout.php");
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Staff Officer') {
+    header("Location: ../login.php");
     exit();
 }
 
-$id = $_SESSION['user_id'];
+$user_id = $_SESSION['user_id'];
 
-// Fetch existing data
-$query = "SELECT * FROM users WHERE id = ?";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("i", $id);
-$stmt->execute();
-$result = $stmt->get_result();
 
-if ($result->num_rows > 0) {
-    $row = $result->fetch_assoc();
-} else {
-    die("Record not found");
-}
-
-$currentDate = date("Y-m-d");
-$currentTime = date("h:i:s A");
 
 ?>
+
 
 <head>
     <!-- Required meta tags -->
@@ -50,6 +37,7 @@ $currentTime = date("h:i:s A");
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
 </head>
 
 <body>
@@ -78,7 +66,7 @@ $currentTime = date("h:i:s A");
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
                 <li class="nav-item">
-                    <a class="nav-link" href="officer_acting_dashboard.php">
+                    <a class="nav-link" href="staff_officer_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
                     </a>
@@ -87,6 +75,24 @@ $currentTime = date("h:i:s A");
                     <a class="nav-link" href="leave_requests.php">
                         <i class="mdi mdi-bookmark-outline menu-icon"></i>
                         <span class="menu-title">Leave Requests</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_application.php">
+                        <i class="mdi mdi-note-plus-outline menu-icon"></i>
+                        <span class="menu-title">Leave Application</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_application_history.php">
+                        <i class="mdi mdi-history menu-icon"></i>
+                        <span class="menu-title">Leave History</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="emergencyLeaves.php">
+                        <i class="mdi mdi-alert-octagon-outline menu-icon"></i>
+                        <span class="menu-title">Emergency Leave</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -106,69 +112,116 @@ $currentTime = date("h:i:s A");
         <!-- partial -->
         <div class="main-panel">
             <div class="content-wrapper">
-                <div class="row">
-                    <div class="col-md-12 grid-margin">
-                        <div class="row">
-                            <div class="col-12 col-xl-8 mb-4 mb-xl-0">
-                                <h3 class="mb-4">Welcome <?php echo htmlspecialchars($row['name']); ?> !</h3>
-                            </div>
-                            <div class="col-12 col-xl-4">
-                                <div class="justify-content-end d-flex">
-                                    <div class="dropdown flex-md-grow-1 flex-xl-grow-0">
-                                        <button class="btn btn-light bg-white" type="button">
-                                            <i class="mdi mdi-calendar"></i> <?php echo $currentDate; ?> </button>
-                                    </div>
-                                </div>
-                            </div>
+                <header>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3>Emergency Leaves for you</h3>
+                        <div>
+                            <a href="emergencySubmissions.php" class="btn btn-primary me-2">My Submitions</a>
+                            <a href="emergencyLeaveForm.php" class="btn btn-primary">New</a>
                         </div>
                     </div>
-                </div>
-                <div class="col grid-margin transparent">
-                    <div class="row">
-                        <div class="col-md-6 mb-4 stretch-card transparent">
-                            <div class="card card-tale">
-                                <div class="card-body">
-                                    <p class="mb-4">Today’s Bookings</p>
-                                    <p class="fs-30 mb-2">4006</p>
-                                    <p>10.00% (30 days)</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-4 stretch-card transparent">
-                            <div class="card card-dark-blue">
-                                <div class="card-body">
-                                    <p class="mb-4">Total Bookings</p>
-                                    <p class="fs-30 mb-2">61344</p>
-                                    <p>22.00% (30 days)</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-4 mb-lg-0 stretch-card transparent">
-                            <div class="card card-light-blue">
-                                <div class="card-body">
-                                    <p class="mb-4">Number of Meetings</p>
-                                    <p class="fs-30 mb-2">34040</p>
-                                    <p>2.00% (30 days)</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 stretch-card transparent">
-                            <div class="card card-light-danger">
-                                <div class="card-body">
-                                    <p class="mb-4">Number of Clients</p>
-                                    <p class="fs-30 mb-2">47033</p>
-                                    <p>0.22% (30 days)</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
+                </header>
+
+                <?php
+                if (!isset($_GET['status'])) {
+                } else {
+                    echo '<div class="alert alert-success" role="alert">Record Updated!.</div>';
+                }
+                ?>
+
+                <?php
+                // Fetch data from database with JOIN to get the name from users table and supervisingOfficer name
+                $query = "
+    SELECT la.*, u.name AS user_name
+    FROM emergency_leave la
+    JOIN users u ON la.user_id = u.id
+    WHERE la.emp_on_leave = '$user_id'
+ORDER BY la.id DESC;
+";
+                $result = $conn->query($query);
+                if (!$result) {
+                    echo "Error: " . $conn->error;
+                }
+
+                if ($result->num_rows > 0) {
+                    echo '<div class="table-responsive">';
+                    echo '<table class="table table-striped table-hover table-bordered" id="userTable">';
+                    echo '<thead class="thead-dark">
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">Submitted By</th>
+                <th scope="col">Commence Leave Date</th>
+                <th scope="col">Resume Date</th>
+                <th scope="col">Leave Application</th>
+                <th scope="col">Action</th>
+            </tr>
+          </thead>
+          <tbody>';
+
+                    while ($row = $result->fetch_assoc()) {
+                        echo '<tr>
+                <td>' . htmlspecialchars($row['id']) . '</td>
+                <td>' . htmlspecialchars($row['user_name']) . '</td> <!-- Display the user name -->
+                <td>' . htmlspecialchars($row['commence_leave_date']) . '</td>
+                <td>' . htmlspecialchars($row['resume_date']) . '</td>
+                <td>';
+
+                        // Check the status and display appropriate text
+                        if ($row['status'] == 0) {
+                            echo '<span style="color: red;">Need to submit application</span>';
+                        } elseif ($row['status'] == 1) {
+                            echo 'Application Submitted';
+                        } else {
+                            echo htmlspecialchars($row['status']);
+                        }
+
+                        echo '</td>
+                <td>
+                    <a class="btn btn-primary btn-sm" href="viewEmergencyLeave.php?id=' . htmlspecialchars($row['id']) . '">View Details</a>
+                </td>
+              </tr>';
+                    }
+
+                    echo '</tbody></table>';
+                    echo '</div>';
+                } else {
+                    echo '<div class="alert alert-warning" role="alert">No records found.</div>';
+                }
+                ?>
             </div>
-            <!-- partial -->
+
+            <script>
+                document.getElementById('searchInput').addEventListener('keyup', function() {
+                    var input = document.getElementById('searchInput').value.toLowerCase();
+                    var table = document.getElementById('userTable');
+                    var trs = table.getElementsByTagName('tr');
+
+                    for (var i = 1; i < trs.length; i++) {
+                        var tds = trs[i].getElementsByTagName('td');
+                        var match = false;
+
+                        for (var j = 0; j < tds.length; j++) {
+                            if (tds[j].innerText.toLowerCase().indexOf(input) > -1) {
+                                match = true;
+                                break;
+                            }
+                        }
+
+                        trs[i].style.display = match ? '' : 'none';
+                    }
+                });
+
+                function confirmDelete(id) {
+                    if (confirm("Are you sure you want to delete this record?")) {
+                        window.location.href = 'delete_user.php?id=' + id;
+                    }
+                }
+            </script>
         </div>
-        <!-- main-panel ends -->
+        <!-- partial -->
+    </div>
+    <!-- main-panel ends -->
     </div>
     <!-- page-body-wrapper ends -->
     </div>

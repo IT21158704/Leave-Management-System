@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Officer Acting') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Staff Officer') {
     header("Location: ../login.php");
     exit();
 }
@@ -66,7 +66,7 @@ $user_id = $_SESSION['user_id'];
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
                 <li class="nav-item">
-                    <a class="nav-link" href="officer_acting_dashboard.php">
+                    <a class="nav-link" href="staff_officer_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
                     </a>
@@ -75,6 +75,24 @@ $user_id = $_SESSION['user_id'];
                     <a class="nav-link" href="leave_requests.php">
                         <i class="mdi mdi-bookmark-outline menu-icon"></i>
                         <span class="menu-title">Leave Requests</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_application.php">
+                        <i class="mdi mdi-note-plus-outline menu-icon"></i>
+                        <span class="menu-title">Leave Application</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_application_history.php">
+                        <i class="mdi mdi-history menu-icon"></i>
+                        <span class="menu-title">Leave History</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="emergencyLeaves.php">
+                        <i class="mdi mdi-alert-octagon-outline menu-icon"></i>
+                        <span class="menu-title">Emergency Leave</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -96,9 +114,9 @@ $user_id = $_SESSION['user_id'];
             <div class="content-wrapper">
                 <header>
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3>Leave Requests List</h3>
-                        <a href="leave_requests_history.php" class="btn btn-primary">History</a>
+                        <h3>Emergency Leaves by you</h3>
                     </div>
+
                 </header>
 
                 <?php
@@ -111,16 +129,12 @@ $user_id = $_SESSION['user_id'];
                 <?php
                 // Fetch data from database with JOIN to get the name from users table and supervisingOfficer name
                 $query = "
-    SELECT la.*, u.name AS user_name, s.name AS supervising_officer_name
-    FROM leave_applications la
-    JOIN users u ON la.user_id = u.id
-    JOIN users s ON la.supervisingOfficer = s.id
-    JOIN request_status rs ON la.id = rs.leave_application_id
-    WHERE la.actingOfficer = '$user_id'
-    AND la.status = 'pending'
-    AND rs.acting_officer_status = 'pending'
+    SELECT la.*, u.name AS user_name
+    FROM emergency_leave la
+    JOIN users u ON la.emp_on_leave = u.id
+    WHERE la.user_id = '$user_id'
+ORDER BY la.id DESC;
 ";
-
                 $result = $conn->query($query);
                 if (!$result) {
                     echo "Error: " . $conn->error;
@@ -132,11 +146,10 @@ $user_id = $_SESSION['user_id'];
                     echo '<thead class="thead-dark">
             <tr>
                 <th scope="col">ID</th>
-                <th scope="col">Name</th>
-                <th scope="col">Leave Dates</th>
+                <th scope="col">Submitted For</th>
                 <th scope="col">Commence Leave Date</th>
                 <th scope="col">Resume Date</th>
-                <th scope="col">Supervising Officer</th>
+                <th scope="col">Leave Application</th>
                 <th scope="col">Action</th>
             </tr>
           </thead>
@@ -146,12 +159,22 @@ $user_id = $_SESSION['user_id'];
                         echo '<tr>
                 <td>' . htmlspecialchars($row['id']) . '</td>
                 <td>' . htmlspecialchars($row['user_name']) . '</td> <!-- Display the user name -->
-                <td>' . htmlspecialchars($row['leaveDates']) . '</td>
-                <td>' . htmlspecialchars($row['commenceLeaveDate']) . '</td>
-                <td>' . htmlspecialchars($row['resumeDate']) . '</td>
-                <td>' . htmlspecialchars($row['supervising_officer_name']) . '</td> <!-- Display the supervising officer name -->
+                <td>' . htmlspecialchars($row['commence_leave_date']) . '</td>
+                <td>' . htmlspecialchars($row['resume_date']) . '</td>
+                <td>';
+
+                        // Check the status and display appropriate text
+                        if ($row['status'] == 0) {
+                            echo '<span style="color: red;">Not submit application yet</span>';
+                        } elseif ($row['status'] == 1) {
+                            echo 'Application Submitted';
+                        } else {
+                            echo htmlspecialchars($row['status']);
+                        }
+
+                        echo '</td>
                 <td>
-                    <a class="btn btn-primary btn-sm" href="view_request.php?id=' . htmlspecialchars($row['id']) . '">View Details</a>
+                    <a class="btn btn-primary btn-sm" href="viewEmergencyLeave.php?id=' . htmlspecialchars($row['id']) . ' &status=null">View Details</a>
                 </td>
               </tr>';
                     }
@@ -184,6 +207,12 @@ $user_id = $_SESSION['user_id'];
                         trs[i].style.display = match ? '' : 'none';
                     }
                 });
+
+                function confirmDelete(id) {
+                    if (confirm("Are you sure you want to delete this record?")) {
+                        window.location.href = 'delete_user.php?id=' + id;
+                    }
+                }
             </script>
         </div>
         <!-- partial -->

@@ -320,16 +320,11 @@ $conn->close();
                         <textarea class="form-control" placeholder="<?php echo htmlspecialchars($application['addressDuringLeave']); ?>" disabled></textarea>
                     </div>
 
-                    <div class="form-group">
-                        <label for="replacement">Name of Employee Who Will Act as Replacement</label>
-                        <input type="text" id="actingOfficer" class="form-control" value="<?php echo htmlspecialchars($replacement_name); ?>" disabled>
-                    </div>
-
                     <!-- Acting Officer -->
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label for="actingOfficer">Officer Acting</label>
-                            <input type="text" id="actingOfficer" class="form-control" value="<?php echo htmlspecialchars($acting_officer_name); ?>" disabled>
+                            <label for="replacement">Name of Employee Who Will Act as Replacement</label>
+                            <input type="text" id="actingOfficer" class="form-control" value="<?php echo htmlspecialchars($replacement_name); ?>" disabled>
                         </div>
 
                         <div class="form-group col-md-6">

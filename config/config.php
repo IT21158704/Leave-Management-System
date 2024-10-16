@@ -34,6 +34,12 @@ if ($current_date == $january_first) {
                     SET casual_leaves = casual_leaves + 24, 
                         rest_leaves = rest_leaves + 21, 
                         last_reset = '$january_first'";
+
+            if ($conn->query($sql) === TRUE) {
+                echo "Leave balances updated for the new year.";
+            } else {
+                echo "Error updating leave balances: " . $conn->error;
+            }
         }
     }
 }

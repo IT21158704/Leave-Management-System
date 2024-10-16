@@ -134,7 +134,7 @@ $user_id = $_SESSION['user_id'];
         <th scope="col">Leave ID</th>
         <th scope="col">Date</th>
         <th scope="col">Number of days</th>
-        <th scope="col">Reason / Dept</th>
+        <th scope="col">Reason</th>
         <th scope="col">Status</th>
         <th scope="col"></th>
     </tr>

@@ -129,10 +129,9 @@ $user_id = $_SESSION['user_id'];
                 <?php
                 // Fetch data from database with JOIN to get the name from users table and supervisingOfficer name
                 $query = "
-    SELECT la.*, u.name AS user_name, s.name AS supervising_officer_name
+    SELECT la.*, u.name AS user_name
     FROM leave_applications la
     JOIN users u ON la.user_id = u.id
-    JOIN users s ON la.supervisingOfficer = s.id
     JOIN request_status rs ON la.id = rs.leave_application_id
     WHERE la.replacement = '$user_id' AND la.status = 'pending' AND rs.replacement_status = 'Pending'
     ORDER BY la.id DESC;
@@ -152,7 +151,6 @@ $user_id = $_SESSION['user_id'];
                 <th scope="col">Leave Dates</th>
                 <th scope="col">Commence Leave Date</th>
                 <th scope="col">Resume Date</th>
-                <th scope="col">Supervising Officer</th>
                 <th scope="col">Action</th>
             </tr>
           </thead>
@@ -165,7 +163,6 @@ $user_id = $_SESSION['user_id'];
                 <td>' . htmlspecialchars($row['leaveDates']) . '</td>
                 <td>' . htmlspecialchars($row['commenceLeaveDate']) . '</td>
                 <td>' . htmlspecialchars($row['resumeDate']) . '</td>
-                <td>' . htmlspecialchars($row['supervising_officer_name']) . '</td> <!-- Display the supervising officer name -->
                 <td>
                     <a class="btn btn-primary btn-sm" href="view_request.php?id=' . htmlspecialchars($row['id']) . '">View Details</a>
                 </td>

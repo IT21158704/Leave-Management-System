@@ -1,12 +1,13 @@
 <?php
 
 include('../../../config/config.php');
+include('../../../config/mailer.php');
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Officer Acting') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Staff Officer') {
     header("Location: ../logout.php");
     exit();
 }
@@ -75,58 +76,129 @@ if ($result->num_rows > 0) {
 
 // Fetch names for replacement, actingOfficer, and supervisingOfficer
 $replacement_name = fetchUserName($application['replacement'], $conn);
-$acting_officer_name = fetchUserName($application['actingOfficer'], $conn);
-$supervising_officer_name = fetchUserName($application['supervisingOfficer'], $conn);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $application_id = $_GET['id'];
 
     if (isset($_POST['accept'])) {
         // Get the selected replacement employee ID from the form
-        $replacement_id = $_POST['replacement'];
 
-        // Validate the replacement ID
-        if (!empty($replacement_id)) {
-            // Update the leave application status and replacement ID
-            $query = "UPDATE leave_applications SET replacement = ? WHERE id = ?";
-            $stmt = $conn->prepare($query);
-            $stmt->bind_param("ii", $replacement_id, $application_id);
-
-            if ($stmt->execute()) {
-                // Insert a record into the request_status table
-                $query = "UPDATE request_status SET acting_officer_status = 'Approved' WHERE leave_application_id = ?";
-                $stmt = $conn->prepare($query);
-                $stmt->bind_param("i", $application_id);
-
-                if ($stmt->execute()) {
-                    header("Location: leave_requests.php?status=updated");
-                    exit();
-                } else {
-                    echo "Error inserting record: " . $conn->error;
-                }
-
-                $stmt->close();
-            } else {
-                echo "Error updating record: " . $conn->error;
-            }
-        } else {
-            echo "Please select a replacement.";
-        }
-    } elseif (isset($_POST['reject'])) {
-        // Rejecting the leave application
-        $query = "UPDATE leave_applications SET status = 'rejected' WHERE id = ?";
+        $query = "UPDATE leave_applications SET status = 'approved' WHERE id = ?";
         $stmt = $conn->prepare($query);
-        $stmt->bind_param("i", $application_id);
+        $stmt->bind_param("i",  $application_id);
 
         if ($stmt->execute()) {
-            header("Location: leave_requests.php?status=updated");
-            exit();
+            // Insert a record into the request_status table
+            $query = "UPDATE request_status SET staff_status = 'Approved' WHERE leave_application_id = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("i", $application_id);
+
+            if ($stmt->execute()) {
+                // Get the selected replacement employee ID from the form
+
+                // Deduct leave days based on the type of leave
+                $leave_dates = $application['leaveDates'];  // Number of days applied for
+                $leave_reason = $application['leaveReason']; // Type of leave ('Casual' or 'Rest')
+
+                // Get current available leaves from the available_leaves table
+                $query = "SELECT casual_leaves, rest_leaves FROM available_leaves WHERE user_id = ?";
+                $stmt = $conn->prepare($query);
+                $stmt->bind_param("i", $id); // $id is the user_id from the application
+                $stmt->execute();
+                $result = $stmt->get_result();
+
+                if ($result->num_rows > 0) {
+                    $available_leaves = $result->fetch_assoc();
+
+                    if ($leave_reason == 'Casual') {
+                        // Deduct casual leaves
+                        if ($available_leaves['casual_leaves'] >= $leave_dates) {
+                            $new_casual_leaves = $available_leaves['casual_leaves'] - $leave_dates;
+                            $query = "UPDATE available_leaves SET casual_leaves = ? WHERE user_id = ?";
+                            $stmt = $conn->prepare($query);
+                            $stmt->bind_param("ii", $new_casual_leaves, $id);
+                            if ($stmt->execute()) {
+                                $body = leaveConfirmationBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], 'Approved');
+                                sendMail($user['email'], $user['name'], 'Leave Request Status', $body);
+
+                                header("Location: leave_requests.php?status=updated");
+                                exit();
+                            }
+                        } else {
+                            echo "Not enough casual leaves available.";
+                            exit();
+                        }
+                    } elseif ($leave_reason == 'Rest') {
+                        // Deduct rest leaves
+                        if ($available_leaves['rest_leaves'] >= $leave_dates) {
+                            $new_rest_leaves = $available_leaves['rest_leaves'] - $leave_dates;
+                            $query = "UPDATE available_leaves SET rest_leaves = ? WHERE user_id = ?";
+                            $stmt = $conn->prepare($query);
+                            $stmt->bind_param("ii", $new_rest_leaves, $id);
+                            if ($stmt->execute()) {
+                                $body = leaveConfirmationBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], 'Approved');
+                                sendMail($user['email'], $user['name'], 'Leave Request Status', $body);
+                                header("Location: leave_requests.php?status=updated");
+                                exit();
+                            }
+                        } else {
+                            echo "Not enough rest leaves available.";
+                            exit();
+                        }
+                    }
+                }
+            }
+
+            $stmt->close();
         } else {
             echo "Error updating record: " . $conn->error;
         }
     }
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (isset($_POST['reject']) && !empty($_POST['rejectionReason'])) {
+            $application_id = $_GET['id'];
+            $rejection_reason = $_POST['rejectionReason'];
+
+            // Update the status to 'rejected' and save the rejection reason
+            $query = "UPDATE leave_applications SET status = 'rejected', rejectionReason = ? WHERE id = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("si", $rejection_reason, $application_id);
+
+            if ($stmt->execute()) {
+
+                $query = "UPDATE request_status SET replacement_status = 'Rejected' WHERE leave_application_id = ?";
+                $stmt = $conn->prepare($query);
+                $stmt->bind_param("i", $application_id);
+
+                if ($stmt->execute()) {
+
+                    if ($stmt->execute()) {
+                        $body = leaveConfirmationBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], 'Rejected', $rejection_reason);
+                        sendMail($user['email'], $user['name'], 'Leave Request Status', $body);
+                        header("Location: leave_requests.php?status=updated");
+                        exit();
+                    } else {
+                        echo "Error updating record: " . $conn->error;
+                    }
+                }
+            }
+        }
+    }
 }
 
+$file_path = '';
+
+// Prepare the SQL query to get the file path
+$sql = "SELECT file_path FROM medicals WHERE application_id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $application_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+// Fetch the file path
+if ($row = $result->fetch_assoc()) {
+    $file_path = $row['file_path'];
+}
 
 $conn->close();
 
@@ -180,7 +252,7 @@ $conn->close();
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
                 <li class="nav-item">
-                    <a class="nav-link" href="officer_acting_dashboard.php">
+                    <a class="nav-link" href="staff_officer_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
                     </a>
@@ -189,6 +261,24 @@ $conn->close();
                     <a class="nav-link" href="leave_requests.php">
                         <i class="mdi mdi-bookmark-outline menu-icon"></i>
                         <span class="menu-title">Leave Requests</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_application.php">
+                        <i class="mdi mdi-note-plus-outline menu-icon"></i>
+                        <span class="menu-title">Leave Application</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_application_history.php">
+                        <i class="mdi mdi-history menu-icon"></i>
+                        <span class="menu-title">Leave History</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="emergencyLeaves.php">
+                        <i class="mdi mdi-alert-octagon-outline menu-icon"></i>
+                        <span class="menu-title">Emergency Leave</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -320,33 +410,60 @@ $conn->close();
                         <textarea class="form-control" placeholder="<?php echo htmlspecialchars($application['addressDuringLeave']); ?>" disabled></textarea>
                     </div>
 
-                    <div class="form-group">
-                        <label for="replacement">Name of Employee Who Will Act as Replacement</label>
-                        <input type="text" id="actingOfficer" class="form-control" value="<?php echo htmlspecialchars($replacement_name); ?>" disabled>
-                    </div>
+
+                    <!-- HTML to display the download button -->
+                    <?php if ($file_path): ?>
+                        <div class="form-group">
+                            <label for="addressDuringLeave">Medical Report</label>
+                            <a href="<?php echo htmlspecialchars($file_path); ?>" class="btn btn-secondary form-control" download>Download File</a>
+                        </div>
+                    <?php endif; ?>
 
                     <!-- Acting Officer -->
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label for="actingOfficer">Officer Acting</label>
-                            <input type="text" id="actingOfficer" class="form-control" value="<?php echo htmlspecialchars($acting_officer_name); ?>" disabled>
-                        </div>
-
-                        <div class="form-group col-md-6">
-                            <label for="supervisingOfficer">Supervising Officer</label>
-                            <input type="text" id="supervisingOfficer" class="form-control" value="<?php echo htmlspecialchars($supervising_officer_name); ?>" disabled>
+                            <label for="replacement">Name of Employee Who Will Act as Replacement</label>
+                            <input type="text" id="replacement" class="form-control" value="<?php echo htmlspecialchars($replacement_name); ?>" disabled></textarea>
                         </div>
                     </div>
 
                     <?php
                     if ($application['status'] == 'pending') {
                         echo '
-                    <a href="leave_requests_history.php" class="btn btn-secondary float-right ml-2">Back to list</a>';
+                    <button type="submit" name="accept" class="btn btn-success float-right ml-2">Accept</button>
+<button type="button" class="btn btn-danger float-right ml-2" data-toggle="modal" data-target="#rejectModal">
+    Reject
+</button>                    <a href="leave_requests.php" class="btn btn-secondary float-right ml-2">Back to list</a>';
                     } else {
                         echo '<a href="leave_requests_history.php" class="btn btn-secondary float-right ml-2">Back to list</a>';
                     }
                     ?>
                 </form>
+                <!-- Modal for Rejection Reason -->
+                <div class="modal fade" id="rejectModal" tabindex="-1" role="dialog" aria-labelledby="rejectModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="rejectModalLabel">Rejection Reason</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="rejectForm" method="post" action="">
+                                    <div class="form-group">
+                                        <label for="rejectionReason">Please provide the reason for rejection</label>
+                                        <textarea class="form-control" id="rejectionReason" name="rejectionReason" required></textarea>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                <button type="submit" form="rejectForm" name="reject" class="btn btn-danger">Reject</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         <!-- container-scroller -->

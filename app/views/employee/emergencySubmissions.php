@@ -129,10 +129,9 @@ $user_id = $_SESSION['user_id'];
                 <?php
                 // Fetch data from database with JOIN to get the name from users table and supervisingOfficer name
                 $query = "
-    SELECT la.*, u.name AS user_name, s.name AS supervising_officer_name
+    SELECT la.*, u.name AS user_name
     FROM emergency_leave la
     JOIN users u ON la.emp_on_leave = u.id
-    JOIN users s ON la.supervising_officer = s.id
     WHERE la.user_id = '$user_id'
 ORDER BY la.id DESC;
 ";

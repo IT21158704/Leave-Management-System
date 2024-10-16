@@ -28,29 +28,15 @@ if ($result->num_rows > 0) {
 }
 
 // Fetch existing data
-$query = "SELECT * FROM available_leaves WHERE user_id = ?";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("i", $id);
-$stmt->execute();
-$result = $stmt->get_result();
 
-if ($result->num_rows > 0) {
-    $avLeaves = $result->fetch_assoc();
-} else {
-    die("Record not found");
-}
 
 $currentDate = date("Y-m-d");
 
 // Fetch all employees for the Replacement dropdown
-$employees_query = "SELECT id, name FROM users WHERE role = 'Employee'";
+$dept = $conn->real_escape_string($user['dept']);
+$employees_query = "SELECT id, name FROM users WHERE role = 'Employee' AND dept = '$dept' AND id != '$id'";
 $employees_result = $conn->query($employees_query);
 
-$officer_query = "SELECT id, name FROM users WHERE role = 'Officer Acting'";
-$officer_result = $conn->query($officer_query);
-
-$supervisor_query = "SELECT id, name FROM users WHERE role = 'Supervising Officer'";
-$supervisor_result = $conn->query($supervisor_query);
 
 // Function to fetch user name by user ID
 function fetchUserName($user_id, $conn)
@@ -75,32 +61,42 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $reason = $_POST['reason'];
     $commenceLeaveDate = $_POST['commenceLeaveDate'];
     $resumeDate = $_POST['resumeDate'];
-    $actingOfficer = !empty($_POST['actingOfficer']) ? $_POST['actingOfficer'] : NULL;
-    $supervisingOfficer = $_POST['supervisingOfficer'];
     $submissionDate = date('Y-m-d');
 
     // Validate required fields
-    if (empty($empOnLeave) || empty($reason) || empty($commenceLeaveDate) || empty($supervisingOfficer)) {
+    if (empty($empOnLeave) || empty($reason) || empty($commenceLeaveDate)) {
         die("Please fill in all required fields.");
     }
 
     // user_id	emp_on_leave	reason	commence_leave_date	resume_date	acting_officer	supervising_officer	submission_date	
 
     // Prepare the SQL statement
-    $query = "INSERT INTO emergency_leave (user_id, emp_on_leave, reason, commence_leave_date, resume_date, acting_officer, supervising_officer, submission_date, status ) 
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)";
+    $query = "INSERT INTO emergency_leave (user_id, emp_on_leave, reason, commence_leave_date, resume_date, submission_date, status ) 
+VALUES (?, ?, ?, ?, ?, ?, 0)";
 
     if ($stmt = $conn->prepare($query)) {
 
-        $stmt->bind_param("iisssiis", $user_id, $empOnLeave, $reason, $commenceLeaveDate, $resumeDate, $actingOfficer, $supervisingOfficer, $submissionDate);
+        $stmt->bind_param("iissss", $user_id, $empOnLeave, $reason, $commenceLeaveDate, $resumeDate, $submissionDate);
 
         if ($stmt->execute()) {
 
-            if ($actingOfficer != null) {
+            $query = "SELECT * FROM users WHERE id = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("i", $empOnLeave);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows > 0) {
+                $emponl = $result->fetch_assoc();
+            } else {
+                die("Record not found");
+            }
+
+            if ($emponl['acting'] != null) {
                 // Fetch existing data (email and name)
                 $query = "SELECT email, name FROM users WHERE id = ?";
                 $stmt = $conn->prepare($query);
-                $stmt->bind_param("i", $actingOfficer);
+                $stmt->bind_param("i", $emponl['acting']);
                 $stmt->execute();
                 $result = $stmt->get_result();
 
@@ -114,22 +110,30 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)";
                 sendMail($actingOfficerEmail, $actingOfficerName, 'Emergency leave request for ' . fetchUserName($empOnLeave, $conn), $body);
             }
 
+            $staffIds = json_decode($emponl['staff'], true); // Decode the JSON array
 
-            // Fetch existing data (email and name)
-            $query = "SELECT email, name FROM users WHERE id = ?";
-            $stmt = $conn->prepare($query);
-            $stmt->bind_param("i", $supervisingOfficer);
-            $stmt->execute();
-            $result = $stmt->get_result();
+            if (!empty($staffIds)) {
+                // Prepare a string for the placeholders
+                $placeholders = implode(',', array_fill(0, count($staffIds), '?'));
 
-            if ($result->num_rows > 0) {
-                $row = $result->fetch_assoc(); // Fetch the row as an associative array
-                $supervisingOfficerEmail = $row['email']; // Access the 'email' field
-                $supervisingOfficerName = $row['name']; // Access the 'name' field
+                // Fetch emails of all staff officers in the staff array
+                $query = "SELECT email, name FROM users WHERE id IN ($placeholders)";
+                $stmt = $conn->prepare($query);
+
+                // Dynamically bind parameters
+                $stmt->bind_param(str_repeat('i', count($staffIds)), ...$staffIds);
+                $stmt->execute();
+                $result = $stmt->get_result();
+
+                // Prepare to send emails
+                while ($row = $result->fetch_assoc()) {
+                    $receiverEmail = $row['email'];
+                    $receiverName = $row['name'];
+
+                    $body = emergencyLeaveEmailBody($user['name'],  fetchUserName($empOnLeave, $conn), $commenceLeaveDate, $resumeDate, $reason);
+                    sendMail($receiverEmail, $receiverName,$user['name'] . ' Placed Leave Request for ' . fetchUserName($empOnLeave, $conn), $body);
+                }
             }
-
-            $body = emergencyLeaveEmailBody($user['name'], fetchUserName($empOnLeave, $conn), $commenceLeaveDate, $resumeDate, $reason);
-            sendMail($supervisingOfficerEmail, $supervisingOfficerName, 'Emergency leave request for ' . fetchUserName($empOnLeave, $conn), $body);
 
             // Fetch existing data (email and name)
             $query = "SELECT email, name FROM users WHERE id = ?";
@@ -145,10 +149,10 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)";
             }
 
             $body = emergencyLeaveEmailBody($user['name'], fetchUserName($empOnLeave, $conn), $commenceLeaveDate, $resumeDate, $reason);
-            sendMail($empOnLeaveEmail, $empOnLeaveName, $user['name'] .' Placed emergency leave request for you ', $body);
+            sendMail($empOnLeaveEmail, $empOnLeaveName, $user['name'] . ' Placed emergency leave request for you ', $body);
 
             $success_message = "Leave application submitted successfully!";
-            header("Location: leave_application_history.php");
+            header("Location: emergencySubmissions.php");
             exit();
         } else {
             $error_message = $stmt->error;
@@ -336,40 +340,6 @@ $conn->close();
                             <label for="resumeDate">Date of Resumption</label>
                             <input type="date" class="form-control" id="resumeDate" name="resumeDate" required>
                             <div class="invalid-feedback">Please enter the date of resuming duties.</div>
-                        </div>
-                    </div>
-
-                    <hr>
-                    <p class="card-description text-secondary">Authorized Representative</p>
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label for="actingOfficer">Officer Acting</label>
-                            <select class="form-control" id="actingOfficer" name="actingOfficer">
-                                <option value="">None</option> <!-- Empty value for optional field -->
-                                <?php
-                                if ($officer_result->num_rows > 0) {
-                                    while ($officer = $officer_result->fetch_assoc()) {
-                                        echo '<option value="' . htmlspecialchars($officer['id']) . '">' . htmlspecialchars($officer['name']) . '</option>';
-                                    }
-                                }
-                                ?>
-                            </select>
-
-                            <div class="invalid-feedback">Please select an Officer Acting.</div>
-                        </div>
-                        <div class="form-group col-md-6">
-                            <label for="supervisingOfficer">Supervising Officer</label>
-                            <select class="form-control" id="supervisingOfficer" name="supervisingOfficer" required>
-                                <option value="none">None</option>
-                                <?php
-                                if ($supervisor_result->num_rows > 0) {
-                                    while ($supervisor = $supervisor_result->fetch_assoc()) {
-                                        echo '<option value="' . htmlspecialchars($supervisor['id']) . '">' . htmlspecialchars($supervisor['name']) . '</option>';
-                                    }
-                                }
-                                ?>
-                            </select>
-                            <div class="invalid-feedback">Please select a Supervising Officer.</div>
                         </div>
                     </div>
 

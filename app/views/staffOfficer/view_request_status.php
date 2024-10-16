@@ -1,13 +1,12 @@
 <?php
 
 include('../../../config/config.php');
-include('../../../config/mailer.php');
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Officer Acting') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Staff Officer') {
     header("Location: ../logout.php");
     exit();
 }
@@ -76,8 +75,6 @@ if ($result->num_rows > 0) {
 
 // Fetch names for replacement, actingOfficer, and supervisingOfficer
 $replacement_name = fetchUserName($application['replacement'], $conn);
-$acting_officer_name = fetchUserName($application['actingOfficer'], $conn);
-$supervising_officer_name = fetchUserName($application['supervisingOfficer'], $conn);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $application_id = $_GET['id'];
@@ -95,42 +92,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($stmt->execute()) {
                 // Insert a record into the request_status table
-                $query = "UPDATE request_status SET acting_officer_status = 'Approved' WHERE leave_application_id = ?";
+                $query = "UPDATE request_status SET supervising_officer_status = 'Approved' WHERE leave_application_id = ?";
                 $stmt = $conn->prepare($query);
                 $stmt->bind_param("i", $application_id);
 
                 if ($stmt->execute()) {
-                    //email notification
-                    $query = "SELECT email, name FROM users WHERE id = ?";
-                    $stmt = $conn->prepare($query);
-                    $stmt->bind_param("i", $replacement_id);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-
-                    if ($result->num_rows > 0) {
-                        $row = $result->fetch_assoc(); // Fetch the row as an associative array
-                        $replacementEmail = $row['email']; // Access the 'email' field
-                        $replacementName = $row['name']; // Access the 'name' field
-                    }
-
-                    $query = "SELECT email, name FROM users WHERE id = ?";
-                    $stmt = $conn->prepare($query);
-                    $stmt->bind_param("i", $application['supervisingOfficer']);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-
-                    if ($result->num_rows > 0) {
-                        $row = $result->fetch_assoc(); // Fetch the row as an associative array
-                        $supervisorEmail = $row['email']; // Access the 'email' field
-                        $supervisorName = $row['name']; // Access the 'name' field
-                    }
-                
-                    $body = leaveRequestEmailBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], $application['fullReason']);
-                    sendMail($replacementEmail, $replacementName, 'Leave Request from ' . $user['name'], $body);
-                
-                    $body = leaveRequestEmailBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], $application['fullReason']);
-                    sendMail($supervisorEmail, $supervisorName, 'Leave Request from ' . $user['name'], $body);
-
                     header("Location: leave_requests.php?status=updated");
                     exit();
                 } else {
@@ -212,7 +178,7 @@ $conn->close();
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
                 <li class="nav-item">
-                    <a class="nav-link" href="officer_acting_dashboard.php">
+                    <a class="nav-link" href="staff_officer_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
                     </a>
@@ -221,6 +187,24 @@ $conn->close();
                     <a class="nav-link" href="leave_requests.php">
                         <i class="mdi mdi-bookmark-outline menu-icon"></i>
                         <span class="menu-title">Leave Requests</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_application.php">
+                        <i class="mdi mdi-note-plus-outline menu-icon"></i>
+                        <span class="menu-title">Leave Application</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_application_history.php">
+                        <i class="mdi mdi-history menu-icon"></i>
+                        <span class="menu-title">Leave History</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="emergencyLeaves.php">
+                        <i class="mdi mdi-alert-octagon-outline menu-icon"></i>
+                        <span class="menu-title">Emergency Leave</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -352,40 +336,18 @@ $conn->close();
                         <textarea class="form-control" placeholder="<?php echo htmlspecialchars($application['addressDuringLeave']); ?>" disabled></textarea>
                     </div>
 
-                    <div class="form-group">
-                        <label for="replacement">Name of Employee Who Will Act as Replacement</label>
-                        <select class="form-control" id="replacement" name="replacement" required>
-                            <option value="">Select an Employee Who Will Act as Replacement</option>
-                            <?php
-                            if ($employees_result->num_rows > 0) {
-                                while ($employee = $employees_result->fetch_assoc()) {
-                                    echo '<option value="' . htmlspecialchars($employee['id']) . '">' . htmlspecialchars($employee['name']) . '</option>';
-                                }
-                            }
-                            ?>
-                        </select>
-                        <div class="invalid-feedback">Please select a replacement.</div>
-                    </div>
-
                     <!-- Acting Officer -->
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label for="actingOfficer">Officer Acting</label>
-                            <input type="text" id="actingOfficer" class="form-control" value="<?php echo htmlspecialchars($acting_officer_name); ?>" disabled>
-                        </div>
-
-                        <div class="form-group col-md-6">
-                            <label for="supervisingOfficer">Supervising Officer</label>
-                            <input type="text" id="supervisingOfficer" class="form-control" value="<?php echo htmlspecialchars($supervising_officer_name); ?>" disabled>
+                            <label for="replacement">Name of Employee Who Will Act as Replacement</label>
+                            <input type="text" id="actingOfficer" class="form-control" value="<?php echo htmlspecialchars($replacement_name); ?>" disabled>
                         </div>
                     </div>
 
                     <?php
                     if ($application['status'] == 'pending') {
                         echo '
-                    <button type="submit" name="accept" class="btn btn-success float-right ml-2">Accept</button>
-                    <button type="submit" name="reject" class="btn btn-danger float-right ml-2">Reject</button>
-                    <a href="leave_requests.php" class="btn btn-secondary float-right ml-2">Back to list</a>';
+                    <a href="leave_requests_history.php" class="btn btn-secondary float-right ml-2">Back to list</a>';
                     } else {
                         echo '<a href="leave_requests_history.php" class="btn btn-secondary float-right ml-2">Back to list</a>';
                     }

@@ -29,6 +29,29 @@ if ($result->num_rows > 0) {
 $currentDate = date("Y-m-d");
 $currentTime = date("h:i:s A");
 
+
+$sql = "SELECT COUNT(*) AS total_count
+FROM leave_applications la
+JOIN users u ON la.user_id = u.id
+JOIN users s ON la.supervisingOfficer = s.id
+JOIN request_status rs ON la.id = rs.leave_application_id
+WHERE la.supervisingOfficer = '$id'
+AND la.status = 'pending'
+AND (
+    (rs.acting_officer_status = 'Approved' AND rs.supervising_officer_status = 'Pending' AND rs.replacement_status = 'Approved')
+    OR (la.actingOfficer IS NULL AND rs.supervising_officer_status = 'Pending')
+);
+";
+$result = $conn->query($sql);
+
+if ($result->num_rows > 0) {
+    // Fetch the count and store it in a variable
+    $count = $result->fetch_assoc();
+    $total_requests = $count['total_count'];
+} else {
+    echo "No records found.";
+}
+
 ?>
 
 <head>
@@ -128,38 +151,8 @@ $currentTime = date("h:i:s A");
                         <div class="col-md-6 mb-4 stretch-card transparent">
                             <div class="card card-tale">
                                 <div class="card-body">
-                                    <p class="mb-4">Today’s Bookings</p>
-                                    <p class="fs-30 mb-2">4006</p>
-                                    <p>10.00% (30 days)</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-4 stretch-card transparent">
-                            <div class="card card-dark-blue">
-                                <div class="card-body">
-                                    <p class="mb-4">Total Bookings</p>
-                                    <p class="fs-30 mb-2">61344</p>
-                                    <p>22.00% (30 days)</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-4 mb-lg-0 stretch-card transparent">
-                            <div class="card card-light-blue">
-                                <div class="card-body">
-                                    <p class="mb-4">Number of Meetings</p>
-                                    <p class="fs-30 mb-2">34040</p>
-                                    <p>2.00% (30 days)</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 stretch-card transparent">
-                            <div class="card card-light-danger">
-                                <div class="card-body">
-                                    <p class="mb-4">Number of Clients</p>
-                                    <p class="fs-30 mb-2">47033</p>
-                                    <p>0.22% (30 days)</p>
+                                    <p class="mb-4">Leave Requests</p>
+                                    <p class="fs-30 mb-2"><?php echo htmlspecialchars($total_requests); ?></p>
                                 </div>
                             </div>
                         </div>

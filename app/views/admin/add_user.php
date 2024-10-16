@@ -14,6 +14,9 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Admin') {
 $successMessage = '';
 $errorMessage = '';
 
+$employees_query = "SELECT id, name, nic FROM users WHERE role = 'Employee'";
+$employees_result = $conn->query($employees_query);
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $name = $_POST['name'];
     $designation = $_POST['designation'];
@@ -23,10 +26,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $temp = $_POST['password'];
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
     $role = $_POST['role'];
+    $acting = isset($_POST['replacement']) && !empty($_POST['replacement']) ? $_POST['replacement'] : NULL;
 
-    $sql = "INSERT INTO users (name, designation, dept, nic, email, password, role) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    $staff_officers = isset($_POST['staff_officers']) ? json_encode($_POST['staff_officers']) : NULL;
+
+    $sql = "INSERT INTO users (name, designation, dept, nic, email, password, role, acting, staff) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sssssss", $name, $designation, $dept, $nic, $email, $password, $role);
+    $stmt->bind_param("sssssssss", $name, $designation, $dept, $nic, $email, $password, $role, $acting, $staff_officers);
 
     if ($stmt->execute()) {
         $new_user_id = $conn->insert_id;
@@ -161,14 +167,18 @@ $conn->close();
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
+                            <label for="dept">Department</label>
+                            <select class="form-control" id="dept" name="dept" required>
+                                <option default>Select Department</option>
+                                <option value="IT Department">IT Department</option>
+                                <option value="Admin Department">Admin Department</option>
+                            </select>
+                            <div class="invalid-feedback">Please enter the department.</div>
+                        </div>
+                        <div class="form-group col-md-6">
                             <label for="designation">Designation</label>
                             <input type="text" class="form-control" id="designation" name="designation" required>
                             <div class="invalid-feedback">Please enter the designation.</div>
-                        </div>
-                        <div class="form-group col-md-6">
-                            <label for="dept">Ministry/Dept.</label>
-                            <input type="text" class="form-control" id="dept" name="dept" required>
-                            <div class="invalid-feedback">Please enter the ministry or department.</div>
                         </div>
                     </div>
                     <div class="form-row">
@@ -190,18 +200,46 @@ $conn->close();
                             <div class="invalid-feedback">Please enter a password.</div>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label for="role">Role</label>
-                        <select class="form-control" id="role" name="role" required>
-                            <option value="Employee">Employee</option>
-                            <option value="Supervising Officer">Supervising Officer</option>
-                            <option value="Head of Department">Head of Department</option>
-                            <option value="Officer Acting">Officer Acting</option>
-                            <option value="Admin">Admin</option>
-                            <option value="Admin">Admin</option>
-                        </select>
-                        <div class="invalid-feedback">Please select a role.</div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="role">Role</label>
+                            <select class="form-control" id="role" name="role" required>
+                                <option value="Employee">Employee</option>
+                                <!-- <option value="Supervising Officer">Supervising Officer</option> -->
+                                <option value="Head of Department">Head of Department</option>
+                                <option value="Staff Officer">Staff Officer</option>
+                            </select>
+                            <div class="invalid-feedback">Please select a role.</div>
+                        </div>
+
+
+                        <div class="form-group col-md-6">
+                            <label for="replacement">NIC of Acting employee</label>
+                            <select class="form-control" id="replacement" name="replacement">
+                                <option value="">None</option>
+                                <?php
+                                if ($employees_result->num_rows > 0) {
+                                    while ($employee = $employees_result->fetch_assoc()) {
+                                        echo '<option value="' . htmlspecialchars($employee['id']) . '">' . htmlspecialchars($employee['nic']) . '</option>';
+                                    }
+                                }
+                                ?>
+                            </select>
+                            <div class="invalid-feedback">Please select a replacement.</div>
+                        </div>
                     </div>
+
+
+
+                    <div class="form-group">
+                        <label for="staff_officers">Select Staff Officers</label>
+                        <select class="form-control" id="staff_officers" name="staff_officers[]" multiple>
+                            <!-- Options will be dynamically populated via JavaScript -->
+                        </select>
+                        <div class="invalid-feedback">Please select at least one Staff Officer.</div>
+                    </div>
+
                     <!-- <button type="submit" class="btn btn-primary btn-submit float-right">Add User</button> -->
                     <div class="mt-3">
                         <a href="view_users.php" class="btn btn-secondary">Back to list</a>
@@ -225,6 +263,27 @@ $conn->close();
                             });
                         }, false);
                     })();
+
+                    document.getElementById('dept').addEventListener('change', function() {
+                        var dept = this.value;
+                        var xhr = new XMLHttpRequest();
+                        xhr.open('POST', 'fetch_staff_officers.php', true);
+                        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                        xhr.onload = function() {
+                            if (this.status === 200) {
+                                var staffOfficers = JSON.parse(this.responseText);
+                                var staffSelect = document.getElementById('staff_officers');
+                                staffSelect.innerHTML = ''; // Clear previous options
+                                staffOfficers.forEach(function(staff) {
+                                    var option = document.createElement('option');
+                                    option.value = staff.id;
+                                    option.text = staff.name + ' (' + staff.nic + ')';
+                                    staffSelect.appendChild(option);
+                                });
+                            }
+                        };
+                        xhr.send('dept=' + dept);
+                    });
                 </script>
             </div>
             <!-- partial -->

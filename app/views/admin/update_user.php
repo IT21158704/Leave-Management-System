@@ -12,7 +12,11 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Admin') {
 
 $id = $_GET['id'];
 
-// Fetch existing data
+// Fetch all employees for the acting role dropdown
+$employees_query = "SELECT id, name, nic FROM users WHERE role = 'Employee'";
+$employees_result = $conn->query($employees_query);
+
+// Fetch existing user data
 $query = "SELECT * FROM users WHERE id = ?";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("i", $id);
@@ -21,6 +25,8 @@ $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
     $row = $result->fetch_assoc();
+    $currentReplacement = $row['acting']; 
+    $selectedStaffOfficers = json_decode($row['staff'], true) ?? [];
 } else {
     die("Record not found");
 }
@@ -32,13 +38,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $nic = $_POST['nic'];
     $email = $_POST['email'];
     $role = $_POST['role'];
+    $acting = $_POST['replacement'];
+    $staffOfficers = $_POST['staff_officers']; // Array of selected staff officers
 
-    $updateQuery = "UPDATE users SET name = ?, designation = ?, dept = ?, nic = ?, email = ?, role = ? WHERE id = ?";
+    // Check if the acting role (replacement) is set to NULL (i.e., "None" selected)
+    if ($acting == "NULL") {
+        $acting = null; // Set to null for SQL
+    }
+
+    // Convert the selected staff officers array to a JSON string for storing in the database
+    $staffOfficersJson = json_encode($staffOfficers);
+
+    // Update the user record in the database
+    $updateQuery = "UPDATE users SET name = ?, designation = ?, dept = ?, nic = ?, email = ?, role = ?, acting = ?, staff = ? WHERE id = ?";
     $stmt = $conn->prepare($updateQuery);
-    $stmt->bind_param("ssssssi", $name, $designation, $dept, $nic, $email, $role, $id);
+    $stmt->bind_param("ssssssisi", $name, $designation, $dept, $nic, $email, $role, $acting, $staffOfficersJson, $id);
 
     if ($stmt->execute()) {
-        header("Location: view_users.php"); // Redirect to the dashboard or another page
+        header("Location: view_users.php"); // Redirect to the user list page
         exit();
     } else {
         echo '<div class="alert alert-danger" role="alert">Update failed: ' . $stmt->error . '</div>';
@@ -47,6 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 $conn->close();
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -145,9 +163,13 @@ $conn->close();
                             <div class="invalid-feedback">Please enter the designation.</div>
                         </div>
                         <div class="form-group">
-                            <label for="dept">Ministry/Dept.</label>
-                            <input type="text" class="form-control" id="dept" name="dept" value="<?php echo htmlspecialchars($row['dept']); ?>" required>
-                            <div class="invalid-feedback">Please enter the ministry or department.</div>
+                            <label for="dept">Department</label>
+                            
+                            <select class="form-control" id="dept" name="dept" required>
+                                <option value="IT Department" <?php if ($row['dept'] == 'IT Department') echo 'selected'; ?>>IT Department</option>
+                                <option value="Admin Department" <?php if ($row['dept'] == 'Admin Department') echo 'selected'; ?>>Admin Department</option>
+                            </select>
+                            <div class="invalid-feedback">Please enter the department.</div>
                         </div>
                         <div class="form-group">
                             <label for="nic">NIC</label>
@@ -163,13 +185,37 @@ $conn->close();
                             <label for="role">Role</label>
                             <select class="form-control" id="role" name="role" required>
                                 <option value="Employee" <?php if ($row['role'] == 'Employee') echo 'selected'; ?>>Employee</option>
-                                <option value="Supervising Officer" <?php if ($row['role'] == 'Supervising Officer') echo 'selected'; ?>>Supervising Officer</option>
                                 <option value="Head of Department" <?php if ($row['role'] == 'Head of Department') echo 'selected'; ?>>Head of Department</option>
-                                <option value="Officer Acting" <?php if ($row['role'] == 'Officer Acting') echo 'selected'; ?>>Officer Acting</option>
-                                <option value="Admin" <?php if ($row['role'] == 'Admin') echo 'selected'; ?>>Admin</option>
+                                <option value="Staff Officer" <?php if ($row['role'] == 'Staff Officer') echo 'selected'; ?>>Staff Officer</option>
                             </select>
                             <div class="invalid-feedback">Please select a role.</div>
                         </div>
+
+                        <div class="form-group">
+                            <label for="replacement">NIC of Acting Employee</label>
+                            <select class="form-control" id="replacement" name="replacement">
+                                <option value="">Select an Employee</option>
+                                <option value="NULL" <?php if (is_null($currentReplacement)) echo 'selected'; ?>>None</option> <!-- Option for no acting employee -->
+                                <?php
+                                if ($employees_result->num_rows > 0) {
+                                    while ($employee = $employees_result->fetch_assoc()) {
+                                        $selected = ($employee['id'] == $currentReplacement) ? 'selected' : '';
+                                        echo '<option value="' . htmlspecialchars($employee['id']) . '" ' . $selected . '>' . htmlspecialchars($employee['nic']) . '</option>';
+                                    }
+                                }
+                                ?>
+                            </select>
+                            <div class="invalid-feedback">Please select a replacement.</div>
+                        </div>
+                        <!-- Staff Officers Multiple Select -->
+                        <div class="form-group">
+                            <label for="staff_officers">Select Staff Officers</label>
+                            <select multiple class="form-control" id="staff_officers" name="staff_officers[]">
+                                <!-- Options will be populated dynamically via JS -->
+                            </select>
+                            <div class="invalid-feedback">Please select at least one staff officer.</div>
+                        </div>
+
                         <button type="submit" class="btn btn-primary">Save</button>
                         <a href="view_users.php" class="btn btn-secondary">Back to list</a>
                         <a href="password_reset.php?id=<?php echo htmlspecialchars($row['id']); ?>" class="btn btn-success">Reset Password</a>
@@ -180,6 +226,32 @@ $conn->close();
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js"></script>
         <script>
+            document.getElementById('dept').addEventListener('change', function() {
+                var dept = this.value;
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', 'fetch_staff_officers.php', true);
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                xhr.onload = function() {
+                    if (this.status === 200) {
+                        var staffOfficers = JSON.parse(this.responseText);
+                        var staffSelect = document.getElementById('staff_officers');
+                        staffSelect.innerHTML = ''; // Clear previous options
+
+                        staffOfficers.forEach(function(staff) {
+                            var option = document.createElement('option');
+                            option.value = staff.id;
+                            option.text = staff.name + ' (' + staff.nic + ')';
+                            // Check if the staff is already selected
+                            if (<?php echo json_encode($selectedStaffOfficers); ?>.includes(staff.id.toString())) {
+                                option.selected = true;
+                            }
+                            staffSelect.appendChild(option);
+                        });
+                    }
+                };
+                xhr.send('dept=' + dept);
+            });
+
             // Bootstrap form validation
             (function() {
                 'use strict';
