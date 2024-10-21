@@ -16,6 +16,11 @@ $id = $_GET['id'];
 $employees_query = "SELECT id, name, nic FROM users WHERE role = 'Employee'";
 $employees_result = $conn->query($employees_query);
 
+// Fetch all departments for the department dropdown
+$departments_query = "SELECT id, name FROM department";
+$departments_result = $conn->query($departments_query);
+
+
 // Fetch existing user data
 $query = "SELECT * FROM users WHERE id = ?";
 $stmt = $conn->prepare($query);
@@ -25,7 +30,7 @@ $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
     $row = $result->fetch_assoc();
-    $currentReplacement = $row['acting']; 
+    $currentReplacement = $row['acting'];
     $selectedStaffOfficers = json_decode($row['staff'], true) ?? [];
 } else {
     die("Record not found");
@@ -164,13 +169,20 @@ $conn->close();
                         </div>
                         <div class="form-group">
                             <label for="dept">Department</label>
-                            
                             <select class="form-control" id="dept" name="dept" required>
-                                <option value="IT Department" <?php if ($row['dept'] == 'IT Department') echo 'selected'; ?>>IT Department</option>
-                                <option value="Admin Department" <?php if ($row['dept'] == 'Admin Department') echo 'selected'; ?>>Admin Department</option>
+                                <option value="">Select a Department</option>
+                                <?php
+                                if ($departments_result->num_rows > 0) {
+                                    while ($department = $departments_result->fetch_assoc()) {
+                                        $selected = ($row['dept'] == $department['name']) ? 'selected' : '';
+                                        echo '<option value="' . htmlspecialchars($department['name']) . '" ' . $selected . '>' . htmlspecialchars($department['name']) . '</option>';
+                                    }
+                                }
+                                ?>
                             </select>
                             <div class="invalid-feedback">Please enter the department.</div>
                         </div>
+
                         <div class="form-group">
                             <label for="nic">NIC</label>
                             <input type="text" class="form-control" id="nic" name="nic" value="<?php echo htmlspecialchars($row['nic']); ?>" required>

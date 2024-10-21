@@ -87,7 +87,7 @@ $conn->close();
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
                 <li class="nav-item">
-                    <a class="nav-link" href="head_of_department_dashboard.php">
+                    <a class="nav-link" href="subject_officer_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
                     </a>

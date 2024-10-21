@@ -61,6 +61,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stmt->close();
 }
 
+// Fetch department names from the database
+$sql = "SELECT * FROM department";
+$result = $conn->query($sql);
+
+$options = '<option default>Select Department</option>';
+
+if ($result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $options .= '<option value="' . htmlspecialchars($row['name']) . '">' . htmlspecialchars($row['name']) . '</option>';
+    }
+} else {
+    $options .= '<option>No departments available</option>';
+}
+
 $conn->close();
 ?>
 
@@ -169,9 +183,7 @@ $conn->close();
                         <div class="form-group col-md-6">
                             <label for="dept">Department</label>
                             <select class="form-control" id="dept" name="dept" required>
-                                <option default>Select Department</option>
-                                <option value="IT Department">IT Department</option>
-                                <option value="Admin Department">Admin Department</option>
+                                <?php echo $options; ?>
                             </select>
                             <div class="invalid-feedback">Please enter the department.</div>
                         </div>
@@ -207,7 +219,7 @@ $conn->close();
                             <select class="form-control" id="role" name="role" required>
                                 <option value="Employee">Employee</option>
                                 <!-- <option value="Supervising Officer">Supervising Officer</option> -->
-                                <option value="Head of Department">Head of Department</option>
+                                <option value="Subject Officer">Subject Officer</option>
                                 <option value="Staff Officer">Staff Officer</option>
                             </select>
                             <div class="invalid-feedback">Please select a role.</div>

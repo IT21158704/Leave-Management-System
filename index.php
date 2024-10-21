@@ -19,12 +19,9 @@ switch ($_SESSION['role']) {
     case 'Supervising Officer':
         header("Location:  app/views/supervisingOfficer/supervising_officer_dashboard.php");
         break;
-    case 'Head of Department':
-        header("Location:  app/views/headOfDept/head_of_department_dashboard.php");
+    case 'Subject Officer':
+        header("Location:  app/views/subjectOfficer/subject_officer_dashboard.php");
         break;
-    // case 'Officer Acting':
-    //     header("Location:  app/views/officerActing/officer_acting_dashboard.php");
-    //     break;
     case 'Admin':
         header("Location: app/views/admin/admin_dashboard.php");
         break;

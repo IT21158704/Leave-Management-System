@@ -44,8 +44,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 case 'Supervising Officer':
                     header("Location: ./supervisingOfficer/supervising_officer_dashboard.php");
                     break;
-                case 'Head of Department':
-                    header("Location: ./headOfDept/head_of_department_dashboard.php");
+                case 'Subject Officer':
+                    header("Location: ./subjectOfficer/subject_officer_dashboard.php");
                     break;
                 case 'Staff Officer':
                     header("Location: ./staffOfficer/staff_officer_dashboard.php");

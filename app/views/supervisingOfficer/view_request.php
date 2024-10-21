@@ -92,22 +92,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($stmt->execute()) {
             //email notification
 
-            $query = "SELECT email, name FROM users WHERE role = 'Head of Department'";
+            $query = "SELECT email, name FROM users WHERE role = 'Subject Officer'";
             $stmt = $conn->prepare($query);
             $stmt->execute();
             $result = $stmt->get_result();
 
             if ($result->num_rows > 0) {
-                // Fetch all rows and send emails to each head of department
+                // Fetch all rows and send emails to each Subject Officer
                 while ($row = $result->fetch_assoc()) {
-                    $headOfDeptEmail = $row['email']; // Access the 'email' field
-                    $headOfDeptName = $row['name'];   // Access the 'name' field
+                    $subjectOfficerEmail = $row['email']; // Access the 'email' field
+                    $subjectOfficerName = $row['name'];   // Access the 'name' field
 
-                    // Generate the email body for each head of department
+                    // Generate the email body for each Subject Officer
                     $body = leaveRequestEmailBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], $application['fullReason']);
 
                     // Send email
-                    sendMail($headOfDeptEmail, $headOfDeptName, 'Leave Request from ' . $user['name'], $body);
+                    sendMail($subjectOfficerEmail, $subjectOfficerName, 'Leave Request from ' . $user['name'], $body);
                 }
             }
 

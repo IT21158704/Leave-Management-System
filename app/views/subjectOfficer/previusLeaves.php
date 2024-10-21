@@ -7,7 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Head of Department') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Subject Officer') {
     header("Location: ../login.php");
     exit();
 }
@@ -63,7 +63,7 @@ $user_id = $_GET['id'];
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
                 <li class="nav-item">
-                    <a class="nav-link" href="head_of_department_dashboard.php">
+                    <a class="nav-link" href="subject_officer_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
                     </a>
