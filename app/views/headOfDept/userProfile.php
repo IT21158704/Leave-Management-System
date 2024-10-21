@@ -244,23 +244,29 @@ if (isset($_POST['generate_pdf'])) {
                     <div class="col-md-12 grid-margin stretch-card">
                         <div class="card">
                             <div class="card-body">
-                                <p class="card-title">Available Leaves in current year</p>
+                                <!-- Flexbox container for title and button -->
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <p class="card-title">Available Leaves in current year</p>
+                                    <a class="btn btn-link btn-sm" href="previusLeaves.php?id=<?php echo $id; ?>">Leave History (Previous Years)</a>
+                                </div>
+
                                 <div class="d-flex flex-wrap">
                                     <div class="me-5 mt-3">
                                         <p class="text-muted">Casual</p>
-                                        <h3 class="text-primary fs-30 font-weight-medium"><?php echo htmlspecialchars($casual); ?> </h3>
+                                        <h3 class="text-primary fs-30 font-weight-medium"><?php echo htmlspecialchars($casual); ?></h3>
                                     </div>
                                     <div class="me-5 mt-3">
                                         <p class="text-muted">Rest</p>
-                                        <h3 class="text-primary fs-30 font-weight-medium"><?php echo htmlspecialchars($rest); ?> </h3>
+                                        <h3 class="text-primary fs-30 font-weight-medium"><?php echo htmlspecialchars($rest); ?></h3>
                                     </div>
                                     <div class="mt-3">
                                         <p class="text-muted">All</p>
-                                        <h3 class="text-primary fs-30 font-weight-medium"><?php echo htmlspecialchars($rest + $casual); ?> </h3>
+                                        <h3 class="text-primary fs-30 font-weight-medium"><?php echo htmlspecialchars($rest + $casual); ?></h3>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
                     </div>
 
 

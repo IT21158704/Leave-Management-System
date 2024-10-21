@@ -101,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $leave_reason = $application['leaveReason']; // Type of leave ('Casual' or 'Rest')
 
                 // Get current available leaves from the available_leaves table
-                $query = "SELECT casual_leaves, rest_leaves FROM available_leaves WHERE user_id = ?";
+                $query = "SELECT casual_leaves, rest_leaves, other_leaves FROM available_leaves WHERE user_id = ?";
                 $stmt = $conn->prepare($query);
                 $stmt->bind_param("i", $id); // $id is the user_id from the application
                 $stmt->execute();
@@ -145,7 +145,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             echo "Not enough rest leaves available.";
                             exit();
                         }
+                    } elseif ($leave_reason == 'Other') {
+                        // Deduct rest leaves
+                        $new_other_leaves = $available_leaves['other_leaves'] + $leave_dates;
+                        $query = "UPDATE available_leaves SET other_leaves = ? WHERE user_id = ?";
+                        $stmt = $conn->prepare($query);
+                        $stmt->bind_param("ii", $new_other_leaves, $id);
+                        if ($stmt->execute()) {
+                            $body = leaveConfirmationBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], 'Approved');
+                            sendMail($user['email'], $user['name'], 'Leave Request Status', $body);
+                            header("Location: leave_requests.php?status=updated");
+                            exit();
+                        }
                     }
+                    
                 }
             }
 
@@ -370,7 +383,7 @@ $conn->close();
                         <!-- <small id="passwordHelpBlock" class="form-text text-muted"> Your  </small> -->
                         <div class="form-group col-md-6">
                             <label for="availableLeaves">Available leaves for current year</label>
-                            <input type="text" id="availableLeaves" class="form-control" name="availableLeaves" value="Casual - <?php echo htmlspecialchars($avLeaves['casual_leaves']); ?>    |   Rest - <?php echo htmlspecialchars($avLeaves['rest_leaves']); ?>" disabled>
+                            <input type="text" id="availableLeaves" class="form-control" name="availableLeaves" value="Casual - <?php echo htmlspecialchars($avLeaves['casual_leaves']); ?>    |   Rest - <?php echo htmlspecialchars($avLeaves['rest_leaves']); ?>    |   Taken Other Leaves - <?php echo htmlspecialchars($avLeaves['other_leaves']); ?>" disabled>
                             <div class="invalid-feedback">Please enter the designation.</div>
                         </div>
                     </div>

@@ -116,6 +116,7 @@ $user_id = $_SESSION['user_id'];
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h3>Emergency Leaves for you</h3>
                         <div>
+                            <a href="empEmergencyLeave.php" class="btn btn-primary me-2">Emp Submitions</a>
                             <a href="emergencySubmissions.php" class="btn btn-primary me-2">My Submitions</a>
                             <a href="emergencyLeaveForm.php" class="btn btn-primary">New</a>
                         </div>

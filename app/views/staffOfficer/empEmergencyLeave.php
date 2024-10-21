@@ -7,66 +7,14 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Staff Officer') {
-    header("Location: ../logout.php");
+    header("Location: ../login.php");
     exit();
 }
 
-$id = $_SESSION['user_id'];
-
-
-$currentDate = date("Y-m-d");
-$currentTime = date("h:i:s A");
-
-$query = "SELECT COUNT(*) as total_applications FROM leave_applications WHERE user_id = $id AND status = 'pending'";
-$result = $conn->query($query);
-if ($result->num_rows > 0) {
-    // Fetch the count and store it in a variable
-    $row = $result->fetch_assoc();
-    $total_applications = $row['total_applications'];
-} else {
-    $total_applications =  "No leave applications found.";
-}
-
-$query = "
-    SELECT COUNT(*) AS total_count
-    FROM leave_applications la
-    JOIN request_status rs ON rs.leave_application_id = la.id
-    JOIN users u ON JSON_CONTAINS(u.staff, JSON_QUOTE(CAST('$id' AS CHAR)), '$')
-    WHERE rs.staff_status = 'Pending';
-";
-
-$result = $conn->query($query);
-if ($result->num_rows > 0) {
-    // Fetch the count and store it in a variable
-    $row = $result->fetch_assoc();
-    $total_requests = $row['total_count'];
-} else {
-    $total_requests =  "No leave applications found.";
-}
-
-$sql = "SELECT casual_leaves, rest_leaves FROM available_leaves WHERE user_id = $id";
-$result = $conn->query($sql);
-if ($result->num_rows > 0) {
-    $row = $result->fetch_assoc();
-    $casual = $row["casual_leaves"];
-    $rest = $row["rest_leaves"];
-}
-
-
-// Fetch existing data
-$query = "SELECT * FROM users WHERE id = ?";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("i", $id);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    $row = $result->fetch_assoc();
-} else {
-    die("Record not found");
-}
+$user_id = $_SESSION['user_id'];
 
 ?>
+
 
 <head>
     <!-- Required meta tags -->
@@ -87,6 +35,7 @@ if ($result->num_rows > 0) {
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
 </head>
 
 <body>
@@ -161,66 +110,109 @@ if ($result->num_rows > 0) {
         <!-- partial -->
         <div class="main-panel">
             <div class="content-wrapper">
-                <div class="row">
-                    <div class="col-md-12 grid-margin">
-                        <div class="row">
-                            <div class="col-12 col-xl-8 mb-4 mb-xl-0">
-                                <h3 class="mb-4">Welcome <?php echo htmlspecialchars($row['name']); ?> !</h3>
-                            </div>
-                            <div class="col-12 col-xl-4">
-                                <div class="justify-content-end d-flex">
-                                    <div class="dropdown flex-md-grow-1 flex-xl-grow-0">
-                                        <button class="btn btn-light bg-white" type="button">
-                                            <i class="mdi mdi-calendar"></i> <?php echo $currentDate; ?> </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                <header>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3>Emergency Leaves for you</h3>
                     </div>
-                </div>
-                <div class="col grid-margin transparent">
-                    <div class="row">
-                        <div class="col-md-6 mb-4 stretch-card transparent">
-                            <div class="card card-tale">
-                                <div class="card-body">
-                                    <p class="mb-4">Leave Requests</p>
-                                    <p class="fs-30 mb-2"><?php echo htmlspecialchars($total_requests); ?></p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-4 stretch-card transparent">
-                            <div class="card card-tale">
-                                <div class="card-body">
-                                    <p class="mb-4">Pending Leaves</p>
-                                    <p class="fs-30 mb-2"><?php echo htmlspecialchars($total_applications); ?> </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-4 mb-lg-0 stretch-card transparent">
-                            <div class="card card-light-blue">
-                                <div class="card-body">
-                                    <p class="mb-4">Available Casual Leaves</p>
-                                    <p class="fs-30 mb-2"><?php echo htmlspecialchars($casual); ?> </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 stretch-card transparent">
-                            <div class="card card-light-danger">
-                                <div class="card-body">
-                                    <p class="mb-4">Available Rest Leaves</p>
-                                    <p class="fs-30 mb-2"><?php echo htmlspecialchars($rest); ?> </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- partial -->
+
+                </header>
+
+                <?php
+                // Fetch data from database with JOIN to get the name from users table and supervisingOfficer name
+                $query = "
+SELECT la.*, u.name AS user_name, u.dept AS user_dept, u2.dept AS emp_dept
+FROM emergency_leave la
+JOIN users u ON la.user_id = u.id
+JOIN users u2 ON la.emp_on_leave = u2.id
+WHERE la.status = '0' AND u.dept = u2.dept
+ORDER BY la.id DESC;
+";
+
+                $result = $conn->query($query);
+                if (!$result) {
+                    echo "Error: " . $conn->error;
+                }
+
+                if ($result->num_rows > 0) {
+                    echo '<div class="table-responsive">';
+                    echo '<table class="table table-striped table-hover table-bordered" id="userTable">';
+                    echo '<thead class="thead-dark">
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">Submitted By</th>
+                <th scope="col">Commence Leave Date</th>
+                <th scope="col">Resume Date</th>
+                <th scope="col">Leave Application</th>
+                <th scope="col">Action</th>
+            </tr>
+          </thead>
+          <tbody>';
+
+                    while ($row = $result->fetch_assoc()) {
+                        echo '<tr>
+                <td>' . htmlspecialchars($row['id']) . '</td>
+                <td>' . htmlspecialchars($row['user_name']) . '</td> <!-- Display the user name -->
+                <td>' . htmlspecialchars($row['commence_leave_date']) . '</td>
+                <td>' . htmlspecialchars($row['resume_date']) . '</td>
+                <td>';
+
+                        // Check the status and display appropriate text
+                        if ($row['status'] == 0) {
+                            echo '<span style="color: red;">Application not Submitted</span>';
+                        } elseif ($row['status'] == 1) {
+                            echo 'Application Submitted';
+                        } else {
+                            echo htmlspecialchars($row['status']);
+                        }
+
+                        echo '</td>
+                <td>
+                    <a class="btn btn-primary btn-sm" href="viewEmergencyLeave.php?id=' . htmlspecialchars($row['id']) . '">View Details</a>
+                </td>
+              </tr>';
+                    }
+
+                    echo '</tbody></table>';
+                    echo '</div>';
+                } else {
+                    echo '<div class="alert alert-warning" role="alert">No records found.</div>';
+                }
+                ?>
             </div>
-            <!-- main-panel ends -->
+
+            <script>
+                document.getElementById('searchInput').addEventListener('keyup', function() {
+                    var input = document.getElementById('searchInput').value.toLowerCase();
+                    var table = document.getElementById('userTable');
+                    var trs = table.getElementsByTagName('tr');
+
+                    for (var i = 1; i < trs.length; i++) {
+                        var tds = trs[i].getElementsByTagName('td');
+                        var match = false;
+
+                        for (var j = 0; j < tds.length; j++) {
+                            if (tds[j].innerText.toLowerCase().indexOf(input) > -1) {
+                                match = true;
+                                break;
+                            }
+                        }
+
+                        trs[i].style.display = match ? '' : 'none';
+                    }
+                });
+
+                function confirmDelete(id) {
+                    if (confirm("Are you sure you want to delete this record?")) {
+                        window.location.href = 'delete_user.php?id=' + id;
+                    }
+                }
+            </script>
         </div>
-        <!-- page-body-wrapper ends -->
+        <!-- partial -->
+    </div>
+    <!-- main-panel ends -->
+    </div>
+    <!-- page-body-wrapper ends -->
     </div>
     <!-- container-scroller -->
     <!-- plugins:js -->

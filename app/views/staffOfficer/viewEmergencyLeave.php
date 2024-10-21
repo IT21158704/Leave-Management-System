@@ -243,7 +243,7 @@ $conn->close();
                             $med_value = 0;
                         }
 
-                        if ($emergency_leave['status'] == 0) {
+                        if ($emergency_leave['status'] == 0 && $emergency_leave['emp_on_leave'] == $_SESSION['user_id']) {
                             echo '<a class="btn btn-primary float-right" href="leave_application.php?id=' . htmlspecialchars($emergency_leave['id']) . '&med=' . $med_value . '">Submit Leave Application</a>';
                         } else {
                             echo '<a class="btn btn-secondary float-right" href="emergencyLeaves.php">Back</a>';
