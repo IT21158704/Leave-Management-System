@@ -7,7 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Supervising Officer') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Employee') {
     header("Location: ../logout.php");
     exit();
 }
@@ -57,61 +57,61 @@ function fetchUserName($user_id, $conn)
     return 'Unknown';
 }
 
-// Fetch all employees for the Replacement dropdown
-$employees_query = "SELECT id, name FROM users WHERE role = 'Employee'";
-$employees_result = $conn->query($employees_query);
-
-// Fetch existing data
-$query = "SELECT * FROM available_leaves WHERE user_id = ?";
+$query = "SELECT replacement_status FROM request_status WHERE leave_application_id = ?";
 $stmt = $conn->prepare($query);
-$stmt->bind_param("i", $id);
+$stmt->bind_param("i", $application_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
-    $avLeaves = $result->fetch_assoc();
-} else {
-    die("Record not found");
+    $row = $result->fetch_assoc();
+    $replacement_status = $row['replacement_status'];
 }
 
 // Fetch names for replacement, actingOfficer, and supervisingOfficer
 $replacement_name = fetchUserName($application['replacement'], $conn);
-$acting_officer_name = fetchUserName($application['actingOfficer'], $conn);
-$supervising_officer_name = fetchUserName($application['supervisingOfficer'], $conn);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $application_id = $_GET['id'];
-
     if (isset($_POST['accept'])) {
+        $application_id = $_GET['id'];
 
         // Insert a record into the request_status table
-        $query = "UPDATE request_status SET supervising_officer_status = 'Approved' WHERE leave_application_id = ?";
+        $query = "UPDATE request_status SET replacement_status = 'Approved' WHERE leave_application_id = ?";
         $stmt = $conn->prepare($query);
         $stmt->bind_param("i", $application_id);
 
         if ($stmt->execute()) {
-            //email notification
 
-            $query = "SELECT email, name FROM users WHERE role = 'Subject Officer'";
-            $stmt = $conn->prepare($query);
-            $stmt->execute();
-            $result = $stmt->get_result();
+            $staffIds = json_decode($user['staff'], true); // Decode the JSON array
 
-            if ($result->num_rows > 0) {
-                // Fetch all rows and send emails to each Subject Officer
+            if (!empty($staffIds)) {
+                // Prepare a string for the placeholders
+                $placeholders = implode(',', array_fill(0, count($staffIds), '?'));
+
+                // Fetch emails of all staff officers in the staff array
+                $query = "SELECT email, name FROM users WHERE id IN ($placeholders)";
+                $stmt = $conn->prepare($query);
+
+                // Dynamically bind parameters
+                $stmt->bind_param(str_repeat('i', count($staffIds)), ...$staffIds);
+                $stmt->execute();
+                $result = $stmt->get_result();
+
+                // Prepare to send emails
                 while ($row = $result->fetch_assoc()) {
-                    $subjectOfficerEmail = $row['email']; // Access the 'email' field
-                    $subjectOfficerName = $row['name'];   // Access the 'name' field
+                    $receiverEmail = $row['email'];
+                    $receiverName = $row['name'];
 
-                    // Generate the email body for each Subject Officer
+                    // Create the email body using your existing function
                     $body = leaveRequestEmailBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], $application['fullReason']);
 
-                    // Send email
-                    sendMail($subjectOfficerEmail, $subjectOfficerName, 'Leave Request from ' . $user['name'], $body);
+                    // Send the email using your existing sendMail function
+                    sendMail($receiverEmail, $receiverName, 'Leave Request from ' . $user['name'], $body);
+
+                    // echo "Message sent to $receiverName ($receiverEmail)<br>";
                 }
             }
 
-            // Redirect after emails are sent
             header("Location: leave_requests.php?status=updated");
             exit();
         } else {
@@ -120,29 +120,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $stmt->close();
     }
-}
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (isset($_POST['reject']) && !empty($_POST['rejectionReason'])) {
+            $application_id = $_GET['id'];
+            $rejection_reason = $_POST['rejectionReason'];
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['reject']) && !empty($_POST['rejectionReason'])) {
-        $application_id = $_GET['id'];
-        $rejection_reason = $_POST['rejectionReason'];
+            // Update the status to 'rejected' and save the rejection reason
+            $query = "UPDATE leave_applications SET status = 'rejected', rejectionReason = ? WHERE id = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("si", $rejection_reason, $application_id);
 
-        // Update the status to 'rejected' and save the rejection reason
-        $query = "UPDATE leave_applications SET status = 'rejected', rejectionReason = ? WHERE id = ?";
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("si", $rejection_reason, $application_id);
+            if ($stmt->execute()) {
 
-        if ($stmt->execute()) {
-            $body = leaveConfirmationBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], 'Rejected', $rejection_reason);
-            sendMail($user['email'], $user['name'], 'Leave Request Status', $body);
-            header("Location: leave_requests.php?status=updated");
-            exit();
-        } else {
-            echo "Error updating record: " . $conn->error;
+                $query = "UPDATE request_status SET replacement_status = 'Rejected' WHERE leave_application_id = ?";
+                $stmt = $conn->prepare($query);
+                $stmt->bind_param("i", $application_id);
+
+                if ($stmt->execute()) {
+
+                    if ($stmt->execute()) {
+                        $body = leaveConfirmationBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], 'Rejected', $rejection_reason);
+                        sendMail($user['email'], $user['name'], 'Leave Request Status', $body);
+                        header("Location: leave_requests.php?status=updated");
+                        exit();
+                    } else {
+                        echo "Error updating record: " . $conn->error;
+                    }
+                }
+            }
         }
     }
 }
-
 
 $conn->close();
 
@@ -195,16 +203,41 @@ $conn->close();
         <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="supervising_officer_dashboard.php">
+                
+            <li class="nav-item">
+                    <a class="nav-link" href="employee_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="users.php">
+                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
+                        <span class="menu-title">Users</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_application.php">
+                        <i class="mdi mdi-note-plus-outline menu-icon"></i>
+                        <span class="menu-title">Leave Application</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_application_history.php">
+                        <i class="mdi mdi-history menu-icon"></i>
+                        <span class="menu-title">Leave History</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="leave_requests.php">
                         <i class="mdi mdi-bookmark-outline menu-icon"></i>
                         <span class="menu-title">Leave Requests</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="emergencyLeaves.php">
+                        <i class="mdi mdi-alert-octagon-outline menu-icon"></i>
+                        <span class="menu-title">Emergency Leave</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -292,31 +325,9 @@ $conn->close();
                             <label for="leaveDates">Number of days leave applied for</label>
                             <input type="number" id="leaveDates" class="form-control" value="<?php echo htmlspecialchars($application['leaveDates']); ?>" disabled>
                         </div>
-
-                        <!-- <small id="passwordHelpBlock" class="form-text text-muted"> Your  </small> -->
-                        <div class="form-group col-md-6">
-                            <label for="availableLeaves">Available leaves for current year</label>
-                            <input type="text" id="availableLeaves" class="form-control" name="availableLeaves" value="Casual - <?php echo htmlspecialchars($avLeaves['casual_leaves']); ?>    |   Rest - <?php echo htmlspecialchars($avLeaves['rest_leaves']); ?>" disabled>
-                            <div class="invalid-feedback">Please enter the designation.</div>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
                         <div class="form-group col-md-6">
                             <label for="leaveReason">Reason</label>
                             <input type="text" id="leaveReason" class="form-control" value="<?php echo htmlspecialchars($application['leaveReason']); ?>" disabled>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <!-- <label for="fullReason">Reasons for leave</label> -->
-                        <textarea class="form-control" id="fullReason" name="fullReason" placeholder="<?php echo htmlspecialchars($application['fullReason']); ?>" disabled></textarea>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label for="firstAppointmentDate">Date of First Appoinment</label>
-                            <input type="date" class="form-control" value="<?php echo htmlspecialchars($application['firstAppointmentDate']); ?>" disabled>
                         </div>
                     </div>
 
@@ -331,35 +342,14 @@ $conn->close();
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="addressDuringLeave">Address During Leave</label>
-                        <textarea class="form-control" placeholder="<?php echo htmlspecialchars($application['addressDuringLeave']); ?>" disabled></textarea>
-                    </div>
-
-
-
-                    <!-- Acting Officer -->
-                    <div class="form-row">
-
-                        <div class="form-group col-md-6">
-                            <label for="replacement">Name of Employee Who Will Act as you</label>
-                            <input type="text" id="replacement" class="form-control"
-                                value="<?php echo ($replacement_name === 'Unknown') ? 'Not assigned yet' : htmlspecialchars($replacement_name); ?>" disabled>
-                        </div>
-
-                        <div class="form-group col-md-6">
-                            <label for="supervisingOfficer">Supervising Officer</label>
-                            <input type="text" id="supervisingOfficer" class="form-control" value="<?php echo htmlspecialchars($supervising_officer_name); ?>" disabled>
-                        </div>
-                    </div>
-
                     <?php
-                    if ($application['status'] == 'pending') {
+                    if ($replacement_status == 'Pending') {
                         echo '
                     <button type="submit" name="accept" class="btn btn-success float-right ml-2">Accept</button>
 <button type="button" class="btn btn-danger float-right ml-2" data-toggle="modal" data-target="#rejectModal">
     Reject
-</button>                    <a href="leave_requests.php" class="btn btn-secondary float-right ml-2">Back to list</a>';
+</button>
+                    <a href="leave_requests.php" class="btn btn-secondary float-right ml-2">Back to list</a>';
                     } else {
                         echo '<a href="leave_requests_history.php" class="btn btn-secondary float-right ml-2">Back to list</a>';
                     }
@@ -390,6 +380,7 @@ $conn->close();
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
         <!-- container-scroller -->

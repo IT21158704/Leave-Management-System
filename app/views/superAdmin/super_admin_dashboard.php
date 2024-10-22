@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Admin') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Super Admin') {
     header("Location: ../login.php");
     exit();
 }
@@ -28,7 +28,7 @@ if ($result->num_rows > 0) {
 
 $currentDate = date("Y-m-d");
 
-$sql = "SELECT COUNT(*) as total_records FROM users  WHERE role != 'Super Admin'";
+$sql = "SELECT COUNT(*) as total_records FROM users Where role = 'Admin'";
 $result = $conn->query($sql);
 
 if ($result->num_rows > 0) {
@@ -88,7 +88,7 @@ if ($result->num_rows > 0) {
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
                 <li class="nav-item">
-                    <a class="nav-link" href="admin_dashboard.php">
+                    <a class="nav-link" href="super_admin_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Dashboard</span>
                     </a>
@@ -96,13 +96,13 @@ if ($result->num_rows > 0) {
                 <li class="nav-item">
                     <a class="nav-link" href="view_users.php">
                         <i class="mdi mdi-account-outline menu-icon"></i>
-                        <span class="menu-title">View Users</span>
+                        <span class="menu-title">Admins</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="add_user.php">
-                        <i class="mdi mdi-account-plus-outline menu-icon"></i>
-                        <span class="menu-title">Add Users</span>
+                    <a class="nav-link" href="customize.php">
+                        <i class="mdi mdi-cog-outline menu-icon"></i>
+                        <span class="menu-title">Customize Sys.</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -144,7 +144,7 @@ if ($result->num_rows > 0) {
                         <div class="col-md-6 mb-4 stretch-card transparent">
                             <div class="card card-tale">
                                 <div class="card-body">
-                                    <p class="mb-4">Active Users</p>
+                                    <p class="mb-4">Active Admins</p>
                                     <p class="fs-30 mb-2"><?php echo htmlspecialchars($total_records); ?></p>
                                 </div>
                             </div>

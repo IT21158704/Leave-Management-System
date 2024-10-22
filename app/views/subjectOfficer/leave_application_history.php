@@ -6,12 +6,13 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Supervising Officer') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Subject Officer') {
     header("Location: ../login.php");
     exit();
 }
 
 $user_id = $_SESSION['user_id'];
+
 ?>
 
 
@@ -62,16 +63,41 @@ $user_id = $_SESSION['user_id'];
         <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="supervising_officer_dashboard.php">
+                
+            <li class="nav-item">
+                    <a class="nav-link" href="employee_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="users.php">
+                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
+                        <span class="menu-title">Users</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_application.php">
+                        <i class="mdi mdi-note-plus-outline menu-icon"></i>
+                        <span class="menu-title">Leave Application</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_application_history.php">
+                        <i class="mdi mdi-history menu-icon"></i>
+                        <span class="menu-title">Leave History</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="leave_requests.php">
                         <i class="mdi mdi-bookmark-outline menu-icon"></i>
                         <span class="menu-title">Leave Requests</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="emergencyLeaves.php">
+                        <i class="mdi mdi-alert-octagon-outline menu-icon"></i>
+                        <span class="menu-title">Emergency Leave</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -93,86 +119,63 @@ $user_id = $_SESSION['user_id'];
             <div class="content-wrapper">
                 <header>
                     <h3 class="mb-4">
-                        Leave Requests History
+                        Leave Application History
                     </h3>
                 </header>
 
+                <div class="mb-3">
+                    <input class="form-control" id="searchInput" type="text" placeholder="Search...">
+                </div>
+
                 <?php
-                // Prepare SQL query with a prepared statement to avoid SQL injection
-                $query = "SELECT la.id, la.submissionDate, la.leaveDates, la.leaveReason, la.status
-    FROM leave_applications la
-    JOIN request_status rs ON rs.leave_application_id = la.id
-    WHERE la.supervisingOfficer = ?
-    AND (rs.supervising_officer_status != 'Pending' OR la.status != 'Pending')
-";
+                // Fetch data from database
+                $query = "SELECT * FROM leave_applications WHERE user_id = $user_id 
+                ORDER BY id DESC;";
+                $result = $conn->query($query);
 
-                // Prepare the statement
-                if ($stmt = $conn->prepare($query)) {
-                    // Bind the user ID to the query
-                    $stmt->bind_param("i", $user_id);
+                if ($result->num_rows > 0) {
+                    echo '<div class="table-responsive">';
+                    echo '<table class="table table-striped table-hover table-bordered" id="userTable">';
+                    echo '<thead class="thead-dark">
+    <tr>
+        <th scope="col">Leave ID</th>
+        <th scope="col">Date</th>
+        <th scope="col">Number of days</th>
+        <th scope="col">Reason</th>
+        <th scope="col">Status</th>
+        <th scope="col"></th>
+    </tr>
+  </thead>
+  <tbody>';
 
-                    // Execute the query
-                    $stmt->execute();
+                    while ($row = $result->fetch_assoc()) {
+                        echo '<tr>
+        <td>' . htmlspecialchars($row['id']) . '</td>
+        <td>' . htmlspecialchars($row['submissionDate']) . '</td>
+        <td>' . htmlspecialchars($row['leaveDates']) . '</td>
+        <td>' . htmlspecialchars($row['leaveReason']) . '</td>
+        <td>';
 
-                    // Get the result
-                    $result = $stmt->get_result();
-
-                    // Check if there are any rows
-                    if ($result->num_rows > 0) {
-                        echo '<div class="table-responsive">';
-                        echo '<table class="table table-striped table-hover table-bordered" id="userTable">';
-                        echo '<thead class="thead-dark">
-                            <tr>
-                                <th scope="col">Leave ID</th>
-                                <th scope="col">Date</th>
-                                <th scope="col">Number of days</th>
-                                <th scope="col">Reason / Dept</th>
-                                <th scope="col">Status</th>
-                                <th scope="col"></th>
-                            </tr>
-                          </thead>
-                          <tbody>';
-
-                        // Fetch and display each row
-                        while ($row = $result->fetch_assoc()) {
-                            echo '<tr>
-                            <td>' . htmlspecialchars($row['id']) . '</td>
-                            <td>' . htmlspecialchars($row['submissionDate']) . '</td>
-                            <td>' . htmlspecialchars($row['leaveDates']) . '</td>
-                            <td>' . htmlspecialchars($row['leaveReason']) . '</td>
-                            <td>';
-
-                            // Display status with appropriate badge color
-                            switch ($row['status']) {
-                                case 'approved':
-                                    echo '<label class="badge badge-success">' . htmlspecialchars($row['status']) . '</label>';
-                                    break;
-                                case 'rejected':
-                                    echo '<label class="badge badge-danger">' . htmlspecialchars($row['status']) . '</label>';
-                                    break;
-                                default:
-                                    echo '<label class="badge badge-warning">' . htmlspecialchars($row['status']) . '</label>';
-                                    break;
-                            }
-
-                            echo '</td>
-                            <td>
-                                <a class="btn btn-success btn-sm" href="view_request_status.php?id=' . htmlspecialchars($row['id']) . '">View</a>
-                            </td>
-                          </tr>';
+                        // Display different badge colors based on status
+                        if ($row['status'] == 'pending') {
+                            echo '<label class="badge badge-warning">' . htmlspecialchars($row['status']) . '</label>';
+                        } elseif ($row['status'] == 'approved') {
+                            echo '<label class="badge badge-success">' . htmlspecialchars($row['status']) . '</label>';
+                        } elseif ($row['status'] == 'rejected') {
+                            echo '<label class="badge badge-danger">' . htmlspecialchars($row['status']) . '</label>';
                         }
 
-                        echo '</tbody></table>';
-                        echo '</div>';
-                    } else {
-                        echo '<div class="alert alert-warning" role="alert">No records found.</div>';
+                        echo '</td>
+        <td>
+            <a class="btn btn-success btn-sm" href="filled_application.php?id=' . htmlspecialchars($row['id']) . '">View</a>
+        </td>
+      </tr>';
                     }
 
-                    // Close the statement
-                    $stmt->close();
+                    echo '</tbody></table>';
+                    echo '</div>';
                 } else {
-                    // Display an error message if the query fails
-                    echo '<div class="alert alert-danger" role="alert">Error: ' . $conn->error . '</div>';
+                    echo '<div class="alert alert-warning" role="alert">No records found.</div>';
                 }
                 ?>
 

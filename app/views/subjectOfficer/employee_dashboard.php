@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Supervising Officer') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Subject Officer') {
     header("Location: ../logout.php");
     exit();
 }
@@ -21,7 +21,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
-    $row = $result->fetch_assoc();
+    $user = $result->fetch_assoc();
 } else {
     die("Record not found");
 }
@@ -29,27 +29,32 @@ if ($result->num_rows > 0) {
 $currentDate = date("Y-m-d");
 $currentTime = date("h:i:s A");
 
-
-$sql = "SELECT COUNT(*) AS total_count
-FROM leave_applications la
-JOIN users u ON la.user_id = u.id
-JOIN users s ON la.supervisingOfficer = s.id
-JOIN request_status rs ON la.id = rs.leave_application_id
-WHERE la.supervisingOfficer = '$id'
-AND la.status = 'pending'
-AND (
-    (rs.acting_officer_status = 'Approved' AND rs.supervising_officer_status = 'Pending' AND rs.replacement_status = 'Approved')
-    OR (la.actingOfficer IS NULL AND rs.supervising_officer_status = 'Pending')
-);
-";
-$result = $conn->query($sql);
-
+$query = "SELECT COUNT(*) as total_applications FROM leave_applications WHERE user_id = $id AND status = 'pending'";
+$result = $conn->query($query);
 if ($result->num_rows > 0) {
     // Fetch the count and store it in a variable
-    $count = $result->fetch_assoc();
-    $total_requests = $count['total_count'];
+    $row = $result->fetch_assoc();
+    $total_applications = $row['total_applications'];
 } else {
-    echo "No records found.";
+    $total_applications =  "No leave applications found.";
+}
+
+$query = "SELECT COUNT(*) as total_requests FROM leave_applications WHERE replacement = $id AND status = 'pending'";
+$result = $conn->query($query);
+if ($result->num_rows > 0) {
+    // Fetch the count and store it in a variable
+    $row = $result->fetch_assoc();
+    $total_requests = $row['total_requests'];
+} else {
+    $total_requests =  "No leave applications found.";
+}
+
+$sql = "SELECT casual_leaves, rest_leaves FROM available_leaves WHERE user_id = $id";
+$result = $conn->query($sql);
+if ($result->num_rows > 0) {
+    $row = $result->fetch_assoc();
+    $casual = $row["casual_leaves"];
+    $rest = $row["rest_leaves"];
 }
 
 ?>
@@ -100,16 +105,41 @@ if ($result->num_rows > 0) {
         <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="supervising_officer_dashboard.php">
+                
+            <li class="nav-item">
+                    <a class="nav-link" href="employee_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="users.php">
+                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
+                        <span class="menu-title">Users</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_application.php">
+                        <i class="mdi mdi-note-plus-outline menu-icon"></i>
+                        <span class="menu-title">Leave Application</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_application_history.php">
+                        <i class="mdi mdi-history menu-icon"></i>
+                        <span class="menu-title">Leave History</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="leave_requests.php">
                         <i class="mdi mdi-bookmark-outline menu-icon"></i>
                         <span class="menu-title">Leave Requests</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="emergencyLeaves.php">
+                        <i class="mdi mdi-alert-octagon-outline menu-icon"></i>
+                        <span class="menu-title">Emergency Leave</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -133,7 +163,7 @@ if ($result->num_rows > 0) {
                     <div class="col-md-12 grid-margin">
                         <div class="row">
                             <div class="col-12 col-xl-8 mb-4 mb-xl-0">
-                                <h3 class="mb-4">Welcome <?php echo htmlspecialchars($row['name']); ?> !</h3>
+                                <h3 class="mb-4">Welcome <?php echo htmlspecialchars($user['name']); ?> !</h3>
                             </div>
                             <div class="col-12 col-xl-4">
                                 <div class="justify-content-end d-flex">
@@ -151,13 +181,40 @@ if ($result->num_rows > 0) {
                         <div class="col-md-6 mb-4 stretch-card transparent">
                             <div class="card card-tale">
                                 <div class="card-body">
-                                    <p class="mb-4">Leave Requests</p>
-                                    <p class="fs-30 mb-2"><?php echo htmlspecialchars($total_requests); ?></p>
+                                    <p class="mb-4">Pending Leaves</p>
+                                    <p class="fs-30 mb-2"><?php echo htmlspecialchars($total_applications); ?> </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4 stretch-card transparent">
+                            <div class="card card-dark-blue">
+                                <div class="card-body">
+                                    <p class="mb-4">Pending Requests</p>
+                                    <p class="fs-30 mb-2"><?php echo htmlspecialchars($total_requests); ?> </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-4 mb-lg-0 stretch-card transparent">
+                            <div class="card card-light-blue">
+                                <div class="card-body">
+                                    <p class="mb-4">Available Casual Leaves</p>
+                                    <p class="fs-30 mb-2"><?php echo htmlspecialchars($casual); ?> </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 stretch-card transparent">
+                            <div class="card card-light-danger">
+                                <div class="card-body">
+                                    <p class="mb-4">Available Rest Leaves</p>
+                                    <p class="fs-30 mb-2"><?php echo htmlspecialchars($rest); ?> </p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
             </div>
             <!-- partial -->
         </div>

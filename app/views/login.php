@@ -41,14 +41,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 case 'Employee':
                     header("Location: ./employee/employee_dashboard.php");
                     break;
-                case 'Supervising Officer':
-                    header("Location: ./supervisingOfficer/supervising_officer_dashboard.php");
-                    break;
                 case 'Subject Officer':
                     header("Location: ./subjectOfficer/subject_officer_dashboard.php");
                     break;
                 case 'Staff Officer':
                     header("Location: ./staffOfficer/staff_officer_dashboard.php");
+                    break;
+                case 'Super Admin':
+                    header("Location: ./superAdmin/super_admin_dashboard.php");
                     break;
                 default:
                     $error_message = 'Role not recognized.';

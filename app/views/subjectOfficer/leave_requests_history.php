@@ -6,15 +6,12 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Staff Officer') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Subject Officer') {
     header("Location: ../login.php");
     exit();
 }
 
 $user_id = $_SESSION['user_id'];
-
-
-
 ?>
 
 
@@ -65,16 +62,17 @@ $user_id = $_SESSION['user_id'];
         <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="staff_officer_dashboard.php">
+                
+            <li class="nav-item">
+                    <a class="nav-link" href="employee_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="leave_requests.php">
+                    <a class="nav-link" href="users.php">
                         <i class="mdi mdi-bookmark-outline menu-icon"></i>
-                        <span class="menu-title">Leave Requests</span>
+                        <span class="menu-title">Users</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -87,6 +85,12 @@ $user_id = $_SESSION['user_id'];
                     <a class="nav-link" href="leave_application_history.php">
                         <i class="mdi mdi-history menu-icon"></i>
                         <span class="menu-title">Leave History</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_requests.php">
+                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
+                        <span class="menu-title">Leave Requests</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -113,72 +117,86 @@ $user_id = $_SESSION['user_id'];
         <div class="main-panel">
             <div class="content-wrapper">
                 <header>
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3>Leave Requests List</h3>
-                        <a href="leave_requests_history.php" class="btn btn-primary">History</a>
-                    </div>
+                    <h3 class="mb-4">
+                        Leave Requests History
+                    </h3>
                 </header>
 
                 <?php
-                if (!isset($_GET['status'])) {
-                } else {
-                    echo '<div class="alert alert-success" role="alert">Record Updated!.</div>';
-                }
-                ?>
-
-                <?php
-                // Fetch data from database with JOIN to get the name from users table and supervisingOfficer name
+                // Fetch data from the database
                 $query = "
-SELECT DISTINCT la.*
-FROM leave_applications la
-JOIN request_status rs ON rs.leave_application_id = la.id
-JOIN users u ON JSON_CONTAINS(u.staff, JSON_QUOTE(CAST('$user_id' AS CHAR)), '$')
-WHERE la.status = 'pending'
-  AND rs.replacement_status = 'Approved';
+    SELECT 
+        la.*,          
+        rs.replacement_status
+    FROM 
+        leave_applications la
+    JOIN 
+        request_status rs ON la.id = rs.leave_application_id
+    WHERE 
+        la.replacement = ? AND
+        rs.replacement_status != 'Pending';
 ";
 
+                // Prepare the statement
+                $stmt = $conn->prepare($query);
+                $stmt->bind_param("i", $user_id); // Assuming $user_id is defined and holds the ID you want to filter by
+                $stmt->execute();
+                $result = $stmt->get_result(); // Get the result set
 
-
-
-                $result = $conn->query($query);
-                if (!$result) {
-                    echo "Error: " . $conn->error;
-                }
-
-                if ($result->num_rows > 0) {
-                    echo '<div class="table-responsive">';
-                    echo '<table class="table table-striped table-hover table-bordered" id="userTable">';
-                    echo '<thead class="thead-dark">
+                if ($result) {
+                    if ($result->num_rows > 0) {
+                        echo '<div class="table-responsive">';
+                        echo '<table class="table table-striped table-hover table-bordered" id="userTable">';
+                        echo '<thead class="thead-dark">
             <tr>
-                <th scope="col">ID</th>              
-                <th scope="col">Leave Reason</th>
-                <th scope="col">Leave Dates</th>
-                <th scope="col">Commence Leave Date</th>
-                <th scope="col">Resume Date</th>
-                <th scope="col">Action</th>
+                <th scope="col">Leave ID</th>
+                <th scope="col">Date</th>
+                <th scope="col">Number of days</th>
+                <th scope="col">Reason / Dept</th>
+                <th scope="col">Status</th>
+                <th scope="col"></th>
             </tr>
-          </thead>
-          <tbody>';
+        </thead>
+        <tbody>';
 
-                    while ($row = $result->fetch_assoc()) {
-                        echo '<tr>
+                        while ($row = $result->fetch_assoc()) {
+                            echo '<tr>
                 <td>' . htmlspecialchars($row['id']) . '</td>
-                <td>' . htmlspecialchars($row['leaveReason']) . '</td> 
+                <td>' . htmlspecialchars($row['submissionDate']) . '</td>
                 <td>' . htmlspecialchars($row['leaveDates']) . '</td>
-                <td>' . htmlspecialchars($row['commenceLeaveDate']) . '</td>
-                <td>' . htmlspecialchars($row['resumeDate']) . '</td>
+                <td>' . htmlspecialchars($row['leaveReason']) . '</td>
+                <td>';
+
+                            // Display different badge colors based on status
+                            if ($row['status'] == 'pending') {
+                                echo '<label class="badge badge-warning">' . htmlspecialchars($row['status']) . '</label>';
+                            } elseif ($row['status'] == 'approved') {
+                                echo '<label class="badge badge-success">' . htmlspecialchars($row['status']) . '</label>';
+                            } elseif ($row['status'] == 'rejected') {
+                                echo '<label class="badge badge-danger">' . htmlspecialchars($row['status']) . '</label>';
+                            }
+
+                            echo '</td>
                 <td>
-                    <a class="btn btn-primary btn-sm" href="view_request.php?id=' . htmlspecialchars($row['id']) . '">View Details</a>
+                    <a class="btn btn-success btn-sm" href="view_request.php?id=' . htmlspecialchars($row['id']) . '">View</a>
                 </td>
               </tr>';
-                    }
+                        }
 
-                    echo '</tbody></table>';
-                    echo '</div>';
+                        echo '</tbody></table>';
+                        echo '</div>';
+                    } else {
+                        echo '<div class="alert alert-warning" role="alert">No records found.</div>';
+                    }
                 } else {
-                    echo '<div class="alert alert-warning" role="alert">No records found.</div>';
+                    // Handle the error
+                    echo '<div class="alert alert-danger" role="alert">Error executing query: ' . $conn->error . '</div>';
                 }
+
                 ?>
+
+
+
             </div>
 
             <script>
@@ -201,6 +219,12 @@ WHERE la.status = 'pending'
                         trs[i].style.display = match ? '' : 'none';
                     }
                 });
+
+                function confirmDelete(id) {
+                    if (confirm("Are you sure you want to delete this record?")) {
+                        window.location.href = 'delete_user.php?id=' + id;
+                    }
+                }
             </script>
         </div>
         <!-- partial -->

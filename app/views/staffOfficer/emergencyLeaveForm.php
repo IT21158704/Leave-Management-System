@@ -396,10 +396,6 @@ $conn->close();
                     placeholder: "Select a Acting Officer",
                     allowClear: true
                 });
-                $('#Supervising Officer').select2({
-                    placeholder: "Select a Supervising Officer",
-                    allowClear: true
-                });
             });
         </script>
 </body>

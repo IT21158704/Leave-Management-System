@@ -51,8 +51,8 @@ if ($current_date == $january_first) {
 
             // Reset the leave balances to default values
             $reset_leaves_sql = "UPDATE available_leaves 
-                                 SET casual_leaves = 24, 
-                                     rest_leaves = 21, 
+                                 SET casual_leaves = 21, 
+                                     rest_leaves = 24, 
                                      other_leaves = 0, 
                                      last_reset = '$january_first'";
 

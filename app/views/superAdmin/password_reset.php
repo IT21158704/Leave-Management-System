@@ -87,15 +87,21 @@ $conn->close();
             <nav class="sidebar sidebar-offcanvas" id="sidebar">
                 <ul class="nav">
                     <li class="nav-item">
-                        <a class="nav-link" href="supervising_officer_dashboard.php">
+                        <a class="nav-link" href="super_admin_dashboard.php">
                             <i class="icon-grid menu-icon"></i>
-                            <span class="menu-title">Home</span>
+                            <span class="menu-title">Dashboard</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="leave_requests.php">
-                            <i class="mdi mdi-bookmark-outline menu-icon"></i>
-                            <span class="menu-title">Leave Requests</span>
+                        <a class="nav-link" href="view_users.php">
+                            <i class="mdi mdi-account-outline menu-icon"></i>
+                            <span class="menu-title">View Users</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="add_user.php">
+                            <i class="mdi mdi-account-plus-outline menu-icon"></i>
+                            <span class="menu-title">Add Users</span>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -146,6 +152,7 @@ $conn->close();
                             <div class="invalid-feedback">Please confirm your password.</div>
                         </div>
                         <button type="submit" class="btn btn-primary">Update</button>
+                        <a class="btn btn-secondary" href="update_user.php?id=<?php echo  htmlspecialchars($id) ?>">Cancel</a>
                     </form>
                 </div>
             </div>

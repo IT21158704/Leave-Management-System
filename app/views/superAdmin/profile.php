@@ -6,8 +6,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Admin') {
-    header("Location: ../login.php");
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Super Admin') {
+    header("Location: ../logout.php");
     exit();
 }
 
@@ -21,22 +21,9 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
-    $row = $result->fetch_assoc();
+    $user = $result->fetch_assoc();
 } else {
     die("Record not found");
-}
-
-$currentDate = date("Y-m-d");
-
-$sql = "SELECT COUNT(*) as total_records FROM users  WHERE role != 'Super Admin'";
-$result = $conn->query($sql);
-
-if ($result->num_rows > 0) {
-    // Fetch the count and store it in a variable
-    $count = $result->fetch_assoc();
-    $total_records = $count['total_records'];
-} else {
-    echo "No records found.";
 }
 
 ?>
@@ -87,8 +74,9 @@ if ($result->num_rows > 0) {
         <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
+
                 <li class="nav-item">
-                    <a class="nav-link" href="admin_dashboard.php">
+                    <a class="nav-link" href="super_admin_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Dashboard</span>
                     </a>
@@ -96,13 +84,13 @@ if ($result->num_rows > 0) {
                 <li class="nav-item">
                     <a class="nav-link" href="view_users.php">
                         <i class="mdi mdi-account-outline menu-icon"></i>
-                        <span class="menu-title">View Users</span>
+                        <span class="menu-title">Admins</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="add_user.php">
-                        <i class="mdi mdi-account-plus-outline menu-icon"></i>
-                        <span class="menu-title">Add Users</span>
+                    <a class="nav-link" href="customize.php">
+                        <i class="mdi mdi-cog-outline menu-icon"></i>
+                        <span class="menu-title">Customize Sys.</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -118,34 +106,23 @@ if ($result->num_rows > 0) {
                     </a>
                 </li>
             </ul>
+            </ul>
         </nav>
         <!-- partial -->
         <div class="main-panel">
             <div class="content-wrapper">
-                <div class="row">
-                    <div class="col-md-12 grid-margin">
-                        <div class="row">
-                            <div class="col-12 col-xl-8 mb-4 mb-xl-0">
-                                <h3 class="mb-4">Welcome <?php echo htmlspecialchars($row['name']); ?> !</h3>
-                            </div>
-                            <div class="col-12 col-xl-4">
-                                <div class="justify-content-end d-flex">
-                                    <div class="dropdown flex-md-grow-1 flex-xl-grow-0">
-                                        <button class="btn btn-sm btn-light bg-white" type="button" id="dropdownMenuDate2">
-                                            <i class="mdi mdi-calendar"></i> <?php echo $currentDate; ?> </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col grid-margin transparent">
-                    <div class="row">
-                        <div class="col-md-6 mb-4 stretch-card transparent">
-                            <div class="card card-tale">
-                                <div class="card-body">
-                                    <p class="mb-4">Active Users</p>
-                                    <p class="fs-30 mb-2"><?php echo htmlspecialchars($total_records); ?></p>
+                <div class="container mt-4 mb-4 d-flex justify-content-center">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex flex-column align-items-center text-center">
+                                <img src="../../assets/images/user.svg" alt="Admin" class="rounded-circle" width="150">
+                                <div class="mt-3">
+                                    <h4> <?php echo htmlspecialchars($user['name']); ?> </h4>
+                                    <p class="text-secondary mb-1">@<?php echo htmlspecialchars($user['email']); ?> </p>
+                                    <p class="text-secondary mb-1"><?php echo htmlspecialchars($user['nic']); ?> </p>
+                                    <p class="text-secondary mb-1"> <?php echo htmlspecialchars($user['designation']); ?> </p>
+                                    <p class="text-muted font-size-sm"><?php echo htmlspecialchars($user['dept']); ?> </p>
+                                    <a href="password_reset.php?id=<?php echo htmlspecialchars($user['id']); ?>" class="btn btn-outline-secondary">Reset Password</a>
                                 </div>
                             </div>
                         </div>

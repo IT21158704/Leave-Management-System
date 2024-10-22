@@ -1,21 +1,20 @@
 <?php
 
 include('../../../config/config.php');
+include('../../../config/mailer.php');
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Staff Officer') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Subject Officer') {
     header("Location: ../logout.php");
     exit();
 }
 
-$application_id = $_GET['id'];
-
 $id = $_SESSION['user_id'];
 
-// Fetch existing user data
+// Fetch existing data
 $query = "SELECT * FROM users WHERE id = ?";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("i", $id);
@@ -28,18 +27,16 @@ if ($result->num_rows > 0) {
     die("Record not found");
 }
 
-// Fetch leave application data
-$query = "SELECT * FROM leave_applications WHERE id = ?";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("i", $application_id);
-$stmt->execute();
-$result = $stmt->get_result();
+// Fetch existing data
 
-if ($result->num_rows > 0) {
-    $application = $result->fetch_assoc();
-} else {
-    die("Record not found");
-}
+
+$currentDate = date("Y-m-d");
+
+// Fetch all employees for the Replacement dropdown
+$dept = $conn->real_escape_string($user['dept']);
+$employees_query = "SELECT id, name FROM users WHERE role = 'Employee' AND dept = '$dept' AND id != '$id'";
+$employees_result = $conn->query($employees_query);
+
 
 // Function to fetch user name by user ID
 function fetchUserName($user_id, $conn)
@@ -56,21 +53,115 @@ function fetchUserName($user_id, $conn)
     return 'Unknown';
 }
 
-// Fetch names for replacement, actingOfficer, and supervisingOfficer
-$replacement_name = fetchUserName($application['replacement'], $conn);
 
-$file_path = '';
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-// Prepare the SQL query to get the file path
-$sql = "SELECT file_path FROM medicals WHERE application_id = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $application_id);
-$stmt->execute();
-$result = $stmt->get_result();
+    $user_id = $_SESSION['user_id'];
+    $empOnLeave = $_POST['empOnLeave'];
+    $reason = $_POST['reason'];
+    $commenceLeaveDate = $_POST['commenceLeaveDate'];
+    $resumeDate = $_POST['resumeDate'];
+    $submissionDate = date('Y-m-d');
 
-// Fetch the file path
-if ($row = $result->fetch_assoc()) {
-    $file_path = $row['file_path'];
+    // Validate required fields
+    if (empty($empOnLeave) || empty($reason) || empty($commenceLeaveDate)) {
+        die("Please fill in all required fields.");
+    }
+
+    // user_id	emp_on_leave	reason	commence_leave_date	resume_date	acting_officer	supervising_officer	submission_date	
+
+    // Prepare the SQL statement
+    $query = "INSERT INTO emergency_leave (user_id, emp_on_leave, reason, commence_leave_date, resume_date, submission_date, status ) 
+VALUES (?, ?, ?, ?, ?, ?, 0)";
+
+    if ($stmt = $conn->prepare($query)) {
+
+        $stmt->bind_param("iissss", $user_id, $empOnLeave, $reason, $commenceLeaveDate, $resumeDate, $submissionDate);
+
+        if ($stmt->execute()) {
+
+            $query = "SELECT * FROM users WHERE id = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("i", $empOnLeave);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows > 0) {
+                $emponl = $result->fetch_assoc();
+            } else {
+                die("Record not found");
+            }
+
+            if ($emponl['acting'] != null) {
+                // Fetch existing data (email and name)
+                $query = "SELECT email, name FROM users WHERE id = ?";
+                $stmt = $conn->prepare($query);
+                $stmt->bind_param("i", $emponl['acting']);
+                $stmt->execute();
+                $result = $stmt->get_result();
+
+                if ($result->num_rows > 0) {
+                    $row = $result->fetch_assoc(); // Fetch the row as an associative array
+                    $actingOfficerEmail = $row['email']; // Access the 'email' field
+                    $actingOfficerName = $row['name']; // Access the 'name' field
+                }
+
+                $body = emergencyLeaveEmailBody($user['name'], fetchUserName($empOnLeave, $conn), $commenceLeaveDate, $resumeDate, $reason);
+                sendMail($actingOfficerEmail, $actingOfficerName, 'Emergency leave request for ' . fetchUserName($empOnLeave, $conn), $body);
+            }
+
+            $staffIds = json_decode($emponl['staff'], true); // Decode the JSON array
+
+            if (!empty($staffIds)) {
+                // Prepare a string for the placeholders
+                $placeholders = implode(',', array_fill(0, count($staffIds), '?'));
+
+                // Fetch emails of all staff officers in the staff array
+                $query = "SELECT email, name FROM users WHERE id IN ($placeholders)";
+                $stmt = $conn->prepare($query);
+
+                // Dynamically bind parameters
+                $stmt->bind_param(str_repeat('i', count($staffIds)), ...$staffIds);
+                $stmt->execute();
+                $result = $stmt->get_result();
+
+                // Prepare to send emails
+                while ($row = $result->fetch_assoc()) {
+                    $receiverEmail = $row['email'];
+                    $receiverName = $row['name'];
+
+                    $body = emergencyLeaveEmailBody($user['name'],  fetchUserName($empOnLeave, $conn), $commenceLeaveDate, $resumeDate, $reason);
+                    sendMail($receiverEmail, $receiverName,$user['name'] . ' Placed Leave Request for ' . fetchUserName($empOnLeave, $conn), $body);
+                }
+            }
+
+            // Fetch existing data (email and name)
+            $query = "SELECT email, name FROM users WHERE id = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("i", $empOnLeave);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows > 0) {
+                $row = $result->fetch_assoc(); // Fetch the row as an associative array
+                $empOnLeaveEmail = $row['email']; // Access the 'email' field
+                $empOnLeaveName = $row['name']; // Access the 'name' field
+            }
+
+            $body = emergencyLeaveEmailBody($user['name'], fetchUserName($empOnLeave, $conn), $commenceLeaveDate, $resumeDate, $reason);
+            sendMail($empOnLeaveEmail, $empOnLeaveName, $user['name'] . ' Placed emergency leave request for you ', $body);
+
+            $success_message = "Leave application submitted successfully!";
+            header("Location: emergencySubmissions.php");
+            exit();
+        } else {
+            $error_message = $stmt->error;
+        }
+
+        $stmt->close();
+    } else {
+        $error_message = 'Connection failed';
+    }
 }
 
 $conn->close();
@@ -124,16 +215,17 @@ $conn->close();
         <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="staff_officer_dashboard.php">
+                
+            <li class="nav-item">
+                    <a class="nav-link" href="employee_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="leave_requests.php">
+                    <a class="nav-link" href="users.php">
                         <i class="mdi mdi-bookmark-outline menu-icon"></i>
-                        <span class="menu-title">Leave Requests</span>
+                        <span class="menu-title">Users</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -146,6 +238,12 @@ $conn->close();
                     <a class="nav-link" href="leave_application_history.php">
                         <i class="mdi mdi-history menu-icon"></i>
                         <span class="menu-title">Leave History</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_requests.php">
+                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
+                        <span class="menu-title">Leave Requests</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -192,116 +290,71 @@ $conn->close();
                     </div>
                 <?php endif; ?>
                 <header>
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3>Leave Application #<?php echo htmlspecialchars($application_id); ?></h3>
-                        <!-- <a href="#" class="btn btn-primary">History</a> -->
-                        <?php
-                        if ($application['status'] == 'pending') {
-                            echo '<label class="btn btn-warning">Pending</label>';
-                        } elseif ($application['status'] == 'approved') {
-                            echo '<label class="btn btn-success">Approved</label>';
-                        } elseif ($application['status'] == 'rejected') {
-                            echo '<label class="btn btn-danger">Rejected</label>';
-                        }
-                        ?>
-                    </div>
+                    <h3 class="mb-4">
+                        Emergency Leave Request
+                    </h3>
                 </header>
 
                 <!-- Registration Form -->
                 <form method="post" action="" class="needs-validation" novalidate>
+                    <hr>
+                    <p class="card-description text-secondary">Leave Request Submitter</p>
                     <div class="form-group">
                         <label for="name">Name</label>
                         <input type="text" class="form-control" id="name" name="name" value="<?php echo htmlspecialchars($user['name']); ?>" disabled required>
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label for="designation">Designation</label>
-                            <input type="text" class="form-control" id="designation" name="designation" value="<?php echo htmlspecialchars($user['designation']); ?>" disabled required>
-                        </div>
-                        <div class="form-group col-md-6">
-                            <label for="dept">Devision</label>
+                            <label for="dept">Ministry/Dept.</label>
                             <input type="text" class="form-control" id="dept" name="dept" value="<?php echo htmlspecialchars($user['dept']); ?>" disabled required>
                         </div>
-                    </div>
-
-                    <div class="form-row">
                         <div class="form-group col-md-6">
                             <label for="designation">Date</label>
                             <input type="date" id="date" class="form-control" name="date" value="<?php echo $currentDate; ?>" disabled>
                         </div>
                     </div>
 
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label for="leaveDates">Number of days leave applied for</label>
-                            <input type="number" id="leaveDates" class="form-control" value="<?php echo htmlspecialchars($application['leaveDates']); ?>" disabled>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label for="leaveReason">Reason</label>
-                            <input type="text" id="leaveReason" class="form-control" value="<?php echo htmlspecialchars($application['leaveReason']); ?>" disabled>
-                        </div>
+                    <hr>
+                    <p class="card-description text-secondary">Employee on Leave</p>
+                    <div class="form-group">
+                        <label for="empOnLeave">Name of employee who is absense</label>
+                        <select class="form-control" id="empOnLeave" name="empOnLeave" required>
+                            <option value="">Select the employee who is absense</option>
+                            <?php
+                            if ($employees_result->num_rows > 0) {
+                                while ($employee = $employees_result->fetch_assoc()) {
+                                    echo '<option value="' . htmlspecialchars($employee['id']) . '">' . htmlspecialchars($employee['name']) . '</option>';
+                                }
+                            }
+                            ?>
+                        </select>
+                        <div class="invalid-feedback">Please select the employee Who is absense.</div>
                     </div>
 
                     <div class="form-group">
-                        <!-- <label for="fullReason">Reasons for leave</label> -->
-                        <textarea class="form-control" id="fullReason" name="fullReason" placeholder="<?php echo htmlspecialchars($application['fullReason']); ?>" disabled></textarea>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label for="firstAppointmentDate">Date of First Appoinment</label>
-                            <input type="date" class="form-control" value="<?php echo htmlspecialchars($application['firstAppointmentDate']); ?>" disabled>
-                        </div>
+                        <label for="reason">Reasons for leave</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="1" placeholder="Type reason here..." required></textarea>
+                        <div class="invalid-feedback">Please enter the reasons for leave.</div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label for="commenceLeaveDate ">Date of Commencing Leave</label>
-                            <input type="date" class="form-control" value="<?php echo htmlspecialchars($application['commenceLeaveDate']); ?>" disabled>
+                            <input type="date" class="form-control" id="commenceLeaveDate" name="commenceLeaveDate" required>
+                            <div class="invalid-feedback">Please enter the date of commencing leave.</div>
                         </div>
                         <div class="form-group col-md-6">
                             <label for="resumeDate">Date of Resumption</label>
-                            <input type="date" class="form-control" id="resumeDate" value="<?php echo htmlspecialchars($application['resumeDate']); ?>" disabled>
+                            <input type="date" class="form-control" id="resumeDate" name="resumeDate" required>
+                            <div class="invalid-feedback">Please enter the date of resuming duties.</div>
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="addressDuringLeave">Address During Leave</label>
-                        <textarea class="form-control" placeholder="<?php echo htmlspecialchars($application['addressDuringLeave']); ?>" disabled></textarea>
-                    </div>
-
-                    <?php if ($file_path): ?>
-                        <div class="form-group">
-                            <label for="addressDuringLeave">Medical Report</label>
-                            <a href="<?php echo htmlspecialchars($file_path); ?>" class="btn btn-secondary form-control" download>Download File</a>
-                        </div>
-                    <?php endif; ?>
-
-                    <!-- Acting Officer -->
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label for="replacement">Name of Employee Who Will Act as you</label>
-                            <input type="text" id="replacement" class="form-control"
-                                value="<?php echo ($replacement_name === 'Unknown') ? 'Not assigned yet' : htmlspecialchars($replacement_name); ?>" disabled>
-                        </div>
-                    </div>
-
-
-
-                    <?php if (!empty($application['rejectionReason'])): ?>
-                        <div class="form-group">
-                            <label for="rejectionReason">Rejection Reason</label>
-                            <textarea class="form-control" placeholder="<?php echo htmlspecialchars($application['rejectionReason']); ?>" disabled></textarea>
-                        </div>
-                    <?php endif; ?>
-
-
-                    <a href="leave_application_history.php" class="btn btn-secondary float-right ml-2">Back to list</a>
+                    <button type="reset" class="btn btn-secondary float-right ml-2">Reset</button>
+                    <button type="submit" class="btn btn-primary float-right">Submit</button>
                 </form>
             </div>
+            <!-- page-body-wrapper ends -->
         </div>
         <!-- container-scroller -->
         <!-- plugins:js -->
@@ -323,4 +376,34 @@ $conn->close();
         <script src="../../assets/js/jquery.cookie.js" type="text/javascript"></script>
         <script src="../../assets/js/dashboard.js"></script>
         <!-- End custom js for this page-->
+
+        <script>
+            // Bootstrap form validation
+            (function() {
+                'use strict';
+                window.addEventListener('load', function() {
+                    var forms = document.getElementsByClassName('needs-validation');
+                    var validation = Array.prototype.filter.call(forms, function(form) {
+                        form.addEventListener('submit', function(event) {
+                            if (form.checkValidity() === false) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                            }
+                            form.classList.add('was-validated');
+                        }, false);
+                    });
+                }, false);
+            })();
+
+            $(document).ready(function() {
+                $('#replacement').select2({
+                    placeholder: "Select a replacement",
+                    allowClear: true
+                });
+                $('#Acting Officer').select2({
+                    placeholder: "Select a Acting Officer",
+                    allowClear: true
+                });
+            });
+        </script>
 </body>

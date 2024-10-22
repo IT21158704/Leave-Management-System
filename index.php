@@ -16,14 +16,17 @@ switch ($_SESSION['role']) {
     case 'Employee':
         header("Location: app/views/employee/employee_dashboard.php");
         break;
-    case 'Supervising Officer':
-        header("Location:  app/views/supervisingOfficer/supervising_officer_dashboard.php");
-        break;
     case 'Subject Officer':
         header("Location:  app/views/subjectOfficer/subject_officer_dashboard.php");
         break;
     case 'Admin':
         header("Location: app/views/admin/admin_dashboard.php");
+        break;
+    case 'Staff Officer':
+        header("Location: ../app/views/staffOfficer/staff_officer_dashboard.php");
+        break;
+    case 'Super Admin':
+        header("Location: ./superAdmin/super_admin_dashboard.php");
         break;
     default:
         // If the role is not recognized, log the user out
@@ -32,5 +35,3 @@ switch ($_SESSION['role']) {
 }
 
 exit();
-
-?>

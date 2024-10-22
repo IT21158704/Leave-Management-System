@@ -105,6 +105,12 @@ $conn->close();
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="profile.php">
+                            <i class="icon-head menu-icon"></i>
+                            <span class="menu-title">Profile</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="../logout.php">
                             <i class="mdi mdi-logout menu-icon"></i>
                             <span class="menu-title">Logout</span>

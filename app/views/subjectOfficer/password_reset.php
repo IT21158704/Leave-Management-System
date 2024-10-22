@@ -84,34 +84,59 @@ $conn->close();
         <!-- partial -->
         <div class="container-fluid page-body-wrapper">
             <!-- partial:partials/_sidebar.html -->
-        <nav class="sidebar sidebar-offcanvas" id="sidebar">
-            <ul class="nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="subject_officer_dashboard.php">
-                        <i class="icon-grid menu-icon"></i>
-                        <span class="menu-title">Home</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="users.php">
-                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
-                        <span class="menu-title">Users</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="profile.php">
-                        <i class="icon-head menu-icon"></i>
-                        <span class="menu-title">Profile</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="../logout.php">
-                        <i class="mdi mdi-logout menu-icon"></i>
-                        <span class="menu-title">Logout</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
+            <nav class="sidebar sidebar-offcanvas" id="sidebar">
+                <ul class="nav">
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="employee_dashboard.php">
+                            <i class="icon-grid menu-icon"></i>
+                            <span class="menu-title">Home</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="users.php">
+                            <i class="mdi mdi-bookmark-outline menu-icon"></i>
+                            <span class="menu-title">Users</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="leave_application.php">
+                            <i class="mdi mdi-note-plus-outline menu-icon"></i>
+                            <span class="menu-title">Leave Application</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="leave_application_history.php">
+                            <i class="mdi mdi-history menu-icon"></i>
+                            <span class="menu-title">Leave History</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="leave_requests.php">
+                            <i class="mdi mdi-bookmark-outline menu-icon"></i>
+                            <span class="menu-title">Leave Requests</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="emergencyLeaves.php">
+                            <i class="mdi mdi-alert-octagon-outline menu-icon"></i>
+                            <span class="menu-title">Emergency Leave</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="profile.php">
+                            <i class="icon-head menu-icon"></i>
+                            <span class="menu-title">Profile</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="../logout.php">
+                            <i class="mdi mdi-logout menu-icon"></i>
+                            <span class="menu-title">Logout</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
 
             <div class="main-panel">
                 <div class="content-wrapper">
