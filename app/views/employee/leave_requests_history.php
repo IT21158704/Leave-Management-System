@@ -127,7 +127,8 @@ $user_id = $_SESSION['user_id'];
         request_status rs ON la.id = rs.leave_application_id
     WHERE 
         la.replacement = ? AND
-        rs.replacement_status != 'Pending';
+        rs.replacement_status != 'Pending'
+        ORDER BY la.id DESC;
 ";
 
                 // Prepare the statement

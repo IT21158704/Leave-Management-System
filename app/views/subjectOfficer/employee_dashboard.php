@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Head of Department') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Subject Officer') {
     header("Location: ../logout.php");
     exit();
 }
@@ -24,6 +24,37 @@ if ($result->num_rows > 0) {
     $user = $result->fetch_assoc();
 } else {
     die("Record not found");
+}
+
+$currentDate = date("Y-m-d");
+$currentTime = date("h:i:s A");
+
+$query = "SELECT COUNT(*) as total_applications FROM leave_applications WHERE user_id = $id AND status = 'pending'";
+$result = $conn->query($query);
+if ($result->num_rows > 0) {
+    // Fetch the count and store it in a variable
+    $row = $result->fetch_assoc();
+    $total_applications = $row['total_applications'];
+} else {
+    $total_applications =  "No leave applications found.";
+}
+
+$query = "SELECT COUNT(*) as total_requests FROM leave_applications WHERE replacement = $id AND status = 'pending'";
+$result = $conn->query($query);
+if ($result->num_rows > 0) {
+    // Fetch the count and store it in a variable
+    $row = $result->fetch_assoc();
+    $total_requests = $row['total_requests'];
+} else {
+    $total_requests =  "No leave applications found.";
+}
+
+$sql = "SELECT casual_leaves, rest_leaves FROM available_leaves WHERE user_id = $id";
+$result = $conn->query($sql);
+if ($result->num_rows > 0) {
+    $row = $result->fetch_assoc();
+    $casual = $row["casual_leaves"];
+    $rest = $row["rest_leaves"];
 }
 
 ?>
@@ -74,8 +105,9 @@ if ($result->num_rows > 0) {
         <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="head_of_department_dashboard.php">
+                
+            <li class="nav-item">
+                    <a class="nav-link" href="employee_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
                     </a>
@@ -84,6 +116,30 @@ if ($result->num_rows > 0) {
                     <a class="nav-link" href="users.php">
                         <i class="mdi mdi-bookmark-outline menu-icon"></i>
                         <span class="menu-title">Users</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_application.php">
+                        <i class="mdi mdi-note-plus-outline menu-icon"></i>
+                        <span class="menu-title">Leave Application</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_application_history.php">
+                        <i class="mdi mdi-history menu-icon"></i>
+                        <span class="menu-title">Leave History</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_requests.php">
+                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
+                        <span class="menu-title">Leave Requests</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="emergencyLeaves.php">
+                        <i class="mdi mdi-alert-octagon-outline menu-icon"></i>
+                        <span class="menu-title">Emergency Leave</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -103,23 +159,62 @@ if ($result->num_rows > 0) {
         <!-- partial -->
         <div class="main-panel">
             <div class="content-wrapper">
-                <div class="container mt-4 mb-4 d-flex justify-content-center">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex flex-column align-items-center text-center">
-                                <img src="../../assets/images/user.svg" alt="Admin" class="rounded-circle" width="150">
-                                <div class="mt-3">
-                                    <h4> <?php echo htmlspecialchars($user['name']); ?> </h4>
-                                    <p class="text-secondary mb-1">@<?php echo htmlspecialchars($user['email']); ?> </p>
-                                    <p class="text-secondary mb-1"><?php echo htmlspecialchars($user['nic']); ?> </p>
-                                    <p class="text-secondary mb-1"> <?php echo htmlspecialchars($user['designation']); ?> </p>
-                                    <p class="text-muted font-size-sm"><?php echo htmlspecialchars($user['dept']); ?> </p>
-                                    <a href="password_reset.php?id=<?php echo htmlspecialchars($user['id']); ?>" class="btn btn-outline-secondary">Reset Password</a>
+                <div class="row">
+                    <div class="col-md-12 grid-margin">
+                        <div class="row">
+                            <div class="col-12 col-xl-8 mb-4 mb-xl-0">
+                                <h3 class="mb-4">Welcome <?php echo htmlspecialchars($user['name']); ?> !</h3>
+                            </div>
+                            <div class="col-12 col-xl-4">
+                                <div class="justify-content-end d-flex">
+                                    <div class="dropdown flex-md-grow-1 flex-xl-grow-0">
+                                        <button class="btn btn-light bg-white" type="button">
+                                            <i class="mdi mdi-calendar"></i> <?php echo $currentDate; ?> </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+                <div class="col grid-margin transparent">
+                    <div class="row">
+                        <div class="col-md-6 mb-4 stretch-card transparent">
+                            <div class="card card-tale">
+                                <div class="card-body">
+                                    <p class="mb-4">Pending Leaves</p>
+                                    <p class="fs-30 mb-2"><?php echo htmlspecialchars($total_applications); ?> </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4 stretch-card transparent">
+                            <div class="card card-dark-blue">
+                                <div class="card-body">
+                                    <p class="mb-4">Pending Requests</p>
+                                    <p class="fs-30 mb-2"><?php echo htmlspecialchars($total_requests); ?> </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-4 mb-lg-0 stretch-card transparent">
+                            <div class="card card-light-blue">
+                                <div class="card-body">
+                                    <p class="mb-4">Available Casual Leaves</p>
+                                    <p class="fs-30 mb-2"><?php echo htmlspecialchars($casual); ?> </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 stretch-card transparent">
+                            <div class="card card-light-danger">
+                                <div class="card-body">
+                                    <p class="mb-4">Available Rest Leaves</p>
+                                    <p class="fs-30 mb-2"><?php echo htmlspecialchars($rest); ?> </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
             <!-- partial -->
         </div>

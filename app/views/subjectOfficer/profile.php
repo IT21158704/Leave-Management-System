@@ -6,14 +6,27 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Head of Department') {
-    header("Location: ../login.php");
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Subject Officer') {
+    header("Location: ../logout.php");
     exit();
 }
 
-$nic = $_SESSION['nic'];
-?>
+$id = $_SESSION['user_id'];
 
+// Fetch existing data
+$query = "SELECT * FROM users WHERE id = ?";
+$stmt = $conn->prepare($query);
+$stmt->bind_param("i", $id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows > 0) {
+    $user = $result->fetch_assoc();
+} else {
+    die("Record not found");
+}
+
+?>
 
 <head>
     <!-- Required meta tags -->
@@ -34,7 +47,6 @@ $nic = $_SESSION['nic'];
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-
 </head>
 
 <body>
@@ -62,8 +74,9 @@ $nic = $_SESSION['nic'];
         <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="head_of_department_dashboard.php">
+                
+            <li class="nav-item">
+                    <a class="nav-link" href="employee_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
                     </a>
@@ -72,6 +85,30 @@ $nic = $_SESSION['nic'];
                     <a class="nav-link" href="users.php">
                         <i class="mdi mdi-bookmark-outline menu-icon"></i>
                         <span class="menu-title">Users</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_application.php">
+                        <i class="mdi mdi-note-plus-outline menu-icon"></i>
+                        <span class="menu-title">Leave Application</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_application_history.php">
+                        <i class="mdi mdi-history menu-icon"></i>
+                        <span class="menu-title">Leave History</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_requests.php">
+                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
+                        <span class="menu-title">Leave Requests</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="emergencyLeaves.php">
+                        <i class="mdi mdi-alert-octagon-outline menu-icon"></i>
+                        <span class="menu-title">Emergency Leave</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -91,83 +128,27 @@ $nic = $_SESSION['nic'];
         <!-- partial -->
         <div class="main-panel">
             <div class="content-wrapper">
-                <header>
-                    <h3 class="mb-4">
-                        Employees
-                    </h3>
-                </header>
-
-                <div class="mb-3">
-                    <input class="form-control" id="searchInput" type="text" placeholder="Search...">
+                <div class="container mt-4 mb-4 d-flex justify-content-center">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex flex-column align-items-center text-center">
+                                <img src="../../assets/images/user.svg" alt="Admin" class="rounded-circle" width="150">
+                                <div class="mt-3">
+                                    <h4> <?php echo htmlspecialchars($user['name']); ?> </h4>
+                                    <p class="text-secondary mb-1">@<?php echo htmlspecialchars($user['email']); ?> </p>
+                                    <p class="text-secondary mb-1"><?php echo htmlspecialchars($user['nic']); ?> </p>
+                                    <p class="text-secondary mb-1"> <?php echo htmlspecialchars($user['designation']); ?> </p>
+                                    <p class="text-muted font-size-sm"><?php echo htmlspecialchars($user['dept']); ?> </p>
+                                    <a href="password_reset.php?id=<?php echo htmlspecialchars($user['id']); ?>" class="btn btn-outline-secondary">Reset Password</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
-                <?php
-                // Fetch data from database
-                $query = "SELECT * FROM users WHERE role != 'Admin'";
-                $result = $conn->query($query);
-
-                if ($result->num_rows > 0) {
-                    echo '<div class="table-responsive">';
-                    echo '<table class="table table-striped table-hover table-bordered" id="userTable">';
-                    echo '<thead class="thead-dark">
-                    <tr>
-                        <th scope="col">ID</th>
-                        <th scope="col">Name</th>
-                        <th scope="col">Designation</th>
-                        <th scope="col">Ministry / Dept</th>
-                        <th scope="col">NIC</th>
-                        <th scope="col">View</th>
-                    </tr>
-                  </thead>
-                  <tbody>';
-
-                    while ($row = $result->fetch_assoc()) {
-                        echo '<tr>
-                        <td>' . htmlspecialchars($row['id']) . '</td>
-                        <td>' . htmlspecialchars($row['name']) . '</td>
-                        <td>' . htmlspecialchars($row['designation']) . '</td>
-                        <td>' . htmlspecialchars($row['dept']) . '</td>
-                        <td>' . htmlspecialchars($row['nic']) . '</td>
-                        <td>
-                            <a class="btn btn-primary btn-sm" href="userProfile.php?id=' . htmlspecialchars($row['id']) . '">View</a> 
-                        </td>
-                      </tr>';
-                    }
-
-                    echo '</tbody></table>';
-                    echo '</div>';
-                } else {
-                    echo '<div class="alert alert-warning" role="alert">No records found.</div>';
-                }
-                ?>
-
             </div>
-
-            <script>
-                document.getElementById('searchInput').addEventListener('keyup', function() {
-                    var input = document.getElementById('searchInput').value.toLowerCase();
-                    var table = document.getElementById('userTable');
-                    var trs = table.getElementsByTagName('tr');
-
-                    for (var i = 1; i < trs.length; i++) {
-                        var tds = trs[i].getElementsByTagName('td');
-                        var match = false;
-
-                        for (var j = 0; j < tds.length; j++) {
-                            if (tds[j].innerText.toLowerCase().indexOf(input) > -1) {
-                                match = true;
-                                break;
-                            }
-                        }
-
-                        trs[i].style.display = match ? '' : 'none';
-                    }
-                });
-            </script>
+            <!-- partial -->
         </div>
-        <!-- partial -->
-    </div>
-    <!-- main-panel ends -->
+        <!-- main-panel ends -->
     </div>
     <!-- page-body-wrapper ends -->
     </div>

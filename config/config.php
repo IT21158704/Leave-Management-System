@@ -27,19 +27,41 @@ if ($current_date == $january_first) {
         $row = $result->fetch_assoc();
         $last_reset = $row['last_reset'];
 
-        // If last_reset is not this year, update leave balances
+        // If last_reset is not this year, proceed with resetting
         if ($last_reset == null || date('Y', strtotime($last_reset)) != $current_year) {
-            // SQL to update casual_leaves and rest_leaves for each user
-            $sql = "UPDATE available_leaves 
-                    SET casual_leaves = casual_leaves + 24, 
-                        rest_leaves = rest_leaves + 21, 
-                        last_reset = '$january_first'";
+            // Fetch all users' leave balances to store them in the history
+            $fetch_leaves_sql = "SELECT user_id, casual_leaves, rest_leaves, other_leaves FROM available_leaves";
+            $leave_result = $conn->query($fetch_leaves_sql);
 
-            if ($conn->query($sql) === TRUE) {
-                echo "Leave balances updated for the new year.";
+            if ($leave_result->num_rows > 0) {
+                while ($leave_row = $leave_result->fetch_assoc()) {
+                    $user_id = $leave_row['user_id'];
+                    $casual_leaves = $leave_row['casual_leaves'];
+                    $rest_leaves = $leave_row['rest_leaves'];
+                    $other_leaves = $leave_row['other_leaves'];
+
+                    // Insert the previous year's leave balances into the leave_history table
+                    $insert_history_sql = "INSERT INTO leave_history (user_id, year, casual_leaves, rest_leaves, other_leaves) 
+                                           VALUES ($user_id, $current_year - 1, $casual_leaves, $rest_leaves, $other_leaves)";
+                    if (!$conn->query($insert_history_sql)) {
+                        echo "Error inserting leave history for user ID $user_id: " . $conn->error;
+                    }
+                }
+            }
+
+            // Reset the leave balances to default values
+            $reset_leaves_sql = "UPDATE available_leaves 
+                                 SET casual_leaves = 21, 
+                                     rest_leaves = 24, 
+                                     other_leaves = 0, 
+                                     last_reset = '$january_first'";
+
+            if ($conn->query($reset_leaves_sql) === TRUE) {
             } else {
-                echo "Error updating leave balances: " . $conn->error;
+                echo "Error resetting leave balances: " . $conn->error;
             }
         }
     }
 }
+
+?>

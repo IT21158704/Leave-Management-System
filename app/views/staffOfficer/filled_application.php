@@ -124,6 +124,7 @@ $conn->close();
         <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
+                
                 <li class="nav-item">
                     <a class="nav-link" href="staff_officer_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
@@ -131,9 +132,15 @@ $conn->close();
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="acting_requests.php">
+                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
+                        <span class="menu-title">Acting Requests</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="leave_requests.php">
                         <i class="mdi mdi-bookmark-outline menu-icon"></i>
-                        <span class="menu-title">Leave Requests</span>
+                        <span class="menu-title">Leave Requests </span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -219,7 +226,7 @@ $conn->close();
                             <input type="text" class="form-control" id="designation" name="designation" value="<?php echo htmlspecialchars($user['designation']); ?>" disabled required>
                         </div>
                         <div class="form-group col-md-6">
-                            <label for="dept">Department</label>
+                            <label for="dept">Devision</label>
                             <input type="text" class="form-control" id="dept" name="dept" value="<?php echo htmlspecialchars($user['dept']); ?>" disabled required>
                         </div>
                     </div>

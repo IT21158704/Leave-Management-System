@@ -7,7 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Employee') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Subject Officer') {
     header("Location: ../logout.php");
     exit();
 }
@@ -20,7 +20,7 @@ if (isset($_GET['id']) && !empty($_GET['id'])) {
     $emergency_id = $_GET['id'];
 }
 
-$med = null;
+$med = 0;
 
 if (isset($_GET['med']) && !empty($_GET['med'])) {
     $med = $_GET['med'];
@@ -71,23 +71,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $fullReason = $_POST['fullReason'];
     $submissionDate = date('Y-m-d H:i:s');
 
-    if ($emergency_id != null ){
-        $emg = 1;
-    }else{
-        $emg = 0;
-    }
-
     // Validate required fields
     if (empty($leaveDates) || empty($leaveReason) || empty($firstAppointmentDate) || empty($commenceLeaveDate) || empty($resumeDate) || empty($addressDuringLeave) || empty($fullReason)) {
         die("Please fill in all required fields.");
     }
 
     // Prepare the SQL statement
-    $query = "INSERT INTO leave_applications (user_id, leaveDates, leaveReason, firstAppointmentDate, commenceLeaveDate, resumeDate, addressDuringLeave, replacement, submissionDate, fullReason, status, emg) 
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)";
+    $query = "INSERT INTO leave_applications (user_id, leaveDates, leaveReason, firstAppointmentDate, commenceLeaveDate, resumeDate, addressDuringLeave, replacement, submissionDate, fullReason, status) 
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
 
     if ($stmt = $conn->prepare($query)) {
-        $stmt->bind_param("iisssssisss", $user_id, $leaveDates, $leaveReason, $firstAppointmentDate, $commenceLeaveDate, $resumeDate, $addressDuringLeave, $replacement, $submissionDate, $fullReason, $emg);
+        $stmt->bind_param("iisssssiss", $user_id, $leaveDates, $leaveReason, $firstAppointmentDate, $commenceLeaveDate, $resumeDate, $addressDuringLeave, $replacement, $submissionDate, $fullReason);
 
         if ($stmt->execute()) {
             // Get the last inserted ID (leave_application_id)
@@ -130,7 +124,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)";
                     }
                 }
 
-                if ($user['acting'] != null && $emergency_id == null) {
+                if ($user['acting'] != null) {
                     // Fetch existing data (email and name)
                     $query = "SELECT email, name FROM users WHERE id = ?";
                     $stmt = $conn->prepare($query);
@@ -287,10 +281,17 @@ $conn->close();
         <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
-                <li class="nav-item">
+                
+            <li class="nav-item">
                     <a class="nav-link" href="employee_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="users.php">
+                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
+                        <span class="menu-title">Users</span>
                     </a>
                 </li>
                 <li class="nav-item">

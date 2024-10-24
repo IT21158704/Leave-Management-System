@@ -81,6 +81,12 @@ $nic = $_SESSION['nic'];
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="profile.php">
+                        <i class="icon-head menu-icon"></i>
+                        <span class="menu-title">Profile</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="../logout.php">
                         <i class="mdi mdi-logout menu-icon"></i>
                         <span class="menu-title">Logout</span>
@@ -103,7 +109,7 @@ $nic = $_SESSION['nic'];
 
                 <?php
                 // Fetch data from database
-                $query = "SELECT * FROM users";
+                $query = "SELECT * FROM users WHERE role != 'Super Admin'";
                 $result = $conn->query($query);
 
                 if ($result->num_rows > 0) {
@@ -114,7 +120,7 @@ $nic = $_SESSION['nic'];
                         <th scope="col">ID</th>
                         <th scope="col">Name</th>
                         <th scope="col">Designation</th>
-                        <th scope="col">Department</th>
+                        <th scope="col">Devision</th>
                         <th scope="col">NIC</th>
                         <th scope="col">Role</th>
                         <th scope="col">Action</th>

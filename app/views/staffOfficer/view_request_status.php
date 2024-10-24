@@ -177,6 +177,7 @@ $conn->close();
         <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
+                
                 <li class="nav-item">
                     <a class="nav-link" href="staff_officer_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
@@ -184,9 +185,15 @@ $conn->close();
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="acting_requests.php">
+                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
+                        <span class="menu-title">Acting Requests</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="leave_requests.php">
                         <i class="mdi mdi-bookmark-outline menu-icon"></i>
-                        <span class="menu-title">Leave Requests</span>
+                        <span class="menu-title">Leave Requests </span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -246,7 +253,7 @@ $conn->close();
                 <?php endif; ?>
                 <header>
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3>Leave Application #<?php echo htmlspecialchars($application_id); ?></h3>
+                        <h3><?php if ($application['emg'] == 1) { echo 'Emergency '; } ?>Leave Application #<?php echo htmlspecialchars($application_id); ?></h3>
                         <?php
                         if ($application['status'] == 'pending') {
                             echo '<label class="btn btn-warning">Pending</label>';

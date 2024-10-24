@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Admin') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Super Admin') {
     header("Location: ../login.php");
     exit();
 }
@@ -14,7 +14,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Admin') {
 $successMessage = '';
 $errorMessage = '';
 
-$employees_query = "SELECT id, name, nic FROM users WHERE role = 'Employee' OR role = 'Staff Officer' ";
+$employees_query = "SELECT id, name, nic FROM users WHERE role = 'Employee'";
 $employees_result = $conn->query($employees_query);
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -25,10 +25,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $email = $_POST['email'];
     $temp = $_POST['password'];
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-    $role = $_POST['role'];
-    $acting = isset($_POST['replacement']) && !empty($_POST['replacement']) ? $_POST['replacement'] : NULL;
-
-    $staff_officers = isset($_POST['staff_officers']) ? json_encode($_POST['staff_officers']) : NULL;
+    $role = 'Admin';
+    $acting = NULL;
+    $staff_officers = NULL;
 
     $sql = "INSERT INTO users (name, designation, dept, nic, email, password, role, acting, staff) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
@@ -72,7 +71,7 @@ if ($result->num_rows > 0) {
         $options .= '<option value="' . htmlspecialchars($row['name']) . '">' . htmlspecialchars($row['name']) . '</option>';
     }
 } else {
-    $options .= '<option>No Devision available</option>';
+    $options .= '<option>No devisions available</option>';
 }
 
 // Fetch department names from the database
@@ -139,8 +138,9 @@ $conn->close();
         <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="admin_dashboard.php">
+                
+            <li class="nav-item">
+                    <a class="nav-link" href="super_admin_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Dashboard</span>
                     </a>
@@ -148,13 +148,13 @@ $conn->close();
                 <li class="nav-item">
                     <a class="nav-link" href="view_users.php">
                         <i class="mdi mdi-account-outline menu-icon"></i>
-                        <span class="menu-title">View Users</span>
+                        <span class="menu-title">Admins</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="add_user.php">
-                        <i class="mdi mdi-account-plus-outline menu-icon"></i>
-                        <span class="menu-title">Add Users</span>
+                    <a class="nav-link" href="customize.php">
+                        <i class="mdi mdi-cog-outline menu-icon"></i>
+                        <span class="menu-title">Customize Sys.</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -188,7 +188,7 @@ $conn->close();
                 <?php endif; ?>
                 <header>
                     <h3 class="mb-4">
-                        Register New User
+                        Register New Admin
                     </h3>
                 </header>
 
@@ -206,7 +206,7 @@ $conn->close();
                             <select class="form-control" id="dept" name="dept" required>
                                 <?php echo $options; ?>
                             </select>
-                            <div class="invalid-feedback">Please enter the department.</div>
+                            <div class="invalid-feedback">Please enter the devision.</div>
                         </div>
                         <div class="form-group col-md-6">
                             <label for="designation">Designation</label>
@@ -234,91 +234,34 @@ $conn->close();
                         </div>
                     </div>
 
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label for="role">Role</label>
-                            <select class="form-control" id="role" name="role" required>
-                                <?php echo $roleOptions; ?>
-                            </select>
-                            <div class="invalid-feedback">Please select a role.</div>
-                        </div>
-
-
-                        <div class="form-group col-md-6">
-                            <label for="replacement">NIC of Acting employee</label>
-                            <select class="form-control" id="replacement" name="replacement">
-                                <option value="">None</option>
-                                <?php
-                                if ($employees_result->num_rows > 0) {
-                                    while ($employee = $employees_result->fetch_assoc()) {
-                                        echo '<option value="' . htmlspecialchars($employee['id']) . '">' . htmlspecialchars($employee['name']) . '</option>';
-                                    }
-                                }
-                                ?>
-                            </select>
-                            <div class="invalid-feedback">Please select a replacement.</div>
-                        </div>
-                    </div>
-
-
-
-                    <div class="form-group">
-                        <label for="staff_officers">Select Staff Officers</label>
-                        <select class="form-control" id="staff_officers" name="staff_officers[]" multiple>
-                            <!-- Options will be dynamically populated via JavaScript -->
-                        </select>
-                        <div class="invalid-feedback">Please select at least one Staff Officer.</div>
-                    </div>
-
-                    <!-- <button type="submit" class="btn btn-primary btn-submit float-right">Add User</button> -->
-                    <div class="mt-3">
-                        <a href="view_users.php" class="btn btn-secondary">Back to list</a>
-                        <button type="submit" class="btn btn-primary float-right">Save</button>
-                    </div>
-                </form>
-                <script>
-                    // Bootstrap form validation
-                    (function() {
-                        'use strict';
-                        window.addEventListener('load', function() {
-                            var forms = document.getElementsByClassName('needs-validation');
-                            var validation = Array.prototype.filter.call(forms, function(form) {
-                                form.addEventListener('submit', function(event) {
-                                    if (form.checkValidity() === false) {
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                    }
-                                    form.classList.add('was-validated');
-                                }, false);
-                            });
-                        }, false);
-                    })();
-
-                    document.getElementById('dept').addEventListener('change', function() {
-                        var dept = this.value;
-                        var xhr = new XMLHttpRequest();
-                        xhr.open('POST', 'fetch_staff_officers.php', true);
-                        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-                        xhr.onload = function() {
-                            if (this.status === 200) {
-                                var staffOfficers = JSON.parse(this.responseText);
-                                var staffSelect = document.getElementById('staff_officers');
-                                staffSelect.innerHTML = ''; // Clear previous options
-                                staffOfficers.forEach(function(staff) {
-                                    var option = document.createElement('option');
-                                    option.value = staff.id;
-                                    option.text = staff.name + ' (' + staff.designation + ')';
-                                    staffSelect.appendChild(option);
-                                });
-                            }
-                        };
-                        xhr.send('dept=' + dept);
-                    });
-                </script>
+            <!-- <button type="submit" class="btn btn-primary btn-submit float-right">Add User</button> -->
+            <div class="mt-3">
+                <a href="view_users.php" class="btn btn-secondary">Back to list</a>
+                <button type="submit" class="btn btn-primary float-right">Save</button>
             </div>
-            <!-- partial -->
+            </form>
+            <script>
+                // Bootstrap form validation
+                (function() {
+                    'use strict';
+                    window.addEventListener('load', function() {
+                        var forms = document.getElementsByClassName('needs-validation');
+                        var validation = Array.prototype.filter.call(forms, function(form) {
+                            form.addEventListener('submit', function(event) {
+                                if (form.checkValidity() === false) {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                }
+                                form.classList.add('was-validated');
+                            }, false);
+                        });
+                    }, false);
+                })();
+            </script>
         </div>
-        <!-- main-panel ends -->
+        <!-- partial -->
+    </div>
+    <!-- main-panel ends -->
     </div>
     <!-- page-body-wrapper ends -->
     </div>

@@ -6,40 +6,14 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Admin') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Super Admin') {
     header("Location: ../login.php");
     exit();
 }
 
-$id = $_SESSION['user_id'];
-
-// Fetch existing data
-$query = "SELECT * FROM users WHERE id = ?";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("i", $id);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    $row = $result->fetch_assoc();
-} else {
-    die("Record not found");
-}
-
-$currentDate = date("Y-m-d");
-
-$sql = "SELECT COUNT(*) as total_records FROM users  WHERE role != 'Super Admin'";
-$result = $conn->query($sql);
-
-if ($result->num_rows > 0) {
-    // Fetch the count and store it in a variable
-    $count = $result->fetch_assoc();
-    $total_records = $count['total_records'];
-} else {
-    echo "No records found.";
-}
-
+$nic = $_SESSION['nic'];
 ?>
+
 
 <head>
     <!-- Required meta tags -->
@@ -60,6 +34,7 @@ if ($result->num_rows > 0) {
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
 </head>
 
 <body>
@@ -87,8 +62,9 @@ if ($result->num_rows > 0) {
         <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
+
                 <li class="nav-item">
-                    <a class="nav-link" href="admin_dashboard.php">
+                    <a class="nav-link" href="super_admin_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Dashboard</span>
                     </a>
@@ -96,13 +72,13 @@ if ($result->num_rows > 0) {
                 <li class="nav-item">
                     <a class="nav-link" href="view_users.php">
                         <i class="mdi mdi-account-outline menu-icon"></i>
-                        <span class="menu-title">View Users</span>
+                        <span class="menu-title">Admins</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="add_user.php">
-                        <i class="mdi mdi-account-plus-outline menu-icon"></i>
-                        <span class="menu-title">Add Users</span>
+                    <a class="nav-link" href="customize.php">
+                        <i class="mdi mdi-cog-outline menu-icon"></i>
+                        <span class="menu-title">Customize Sys.</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -122,39 +98,96 @@ if ($result->num_rows > 0) {
         <!-- partial -->
         <div class="main-panel">
             <div class="content-wrapper">
-                <div class="row">
-                    <div class="col-md-12 grid-margin">
-                        <div class="row">
-                            <div class="col-12 col-xl-8 mb-4 mb-xl-0">
-                                <h3 class="mb-4">Welcome <?php echo htmlspecialchars($row['name']); ?> !</h3>
-                            </div>
-                            <div class="col-12 col-xl-4">
-                                <div class="justify-content-end d-flex">
-                                    <div class="dropdown flex-md-grow-1 flex-xl-grow-0">
-                                        <button class="btn btn-sm btn-light bg-white" type="button" id="dropdownMenuDate2">
-                                            <i class="mdi mdi-calendar"></i> <?php echo $currentDate; ?> </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+
+                <header class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>
+                        Registered Admins
+                    </h3>
+                    <a href="add_user.php" class="btn btn-primary">Add Admin</a>
+                </header>
+
+
+                <div class="mb-3">
+                    <input class="form-control" id="searchInput" type="text" placeholder="Search...">
                 </div>
-                <div class="col grid-margin transparent">
-                    <div class="row">
-                        <div class="col-md-6 mb-4 stretch-card transparent">
-                            <div class="card card-tale">
-                                <div class="card-body">
-                                    <p class="mb-4">Active Users</p>
-                                    <p class="fs-30 mb-2"><?php echo htmlspecialchars($total_records); ?></p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
+                <?php
+                // Fetch data from database
+                $query = "SELECT * FROM users
+                WHERE role = 'Admin'";
+                $result = $conn->query($query);
+
+                if ($result->num_rows > 0) {
+                    echo '<div class="table-responsive">';
+                    echo '<table class="table table-striped table-hover table-bordered" id="userTable">';
+                    echo '<thead class="thead-dark">
+                    <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Designation</th>
+                        <th scope="col">Devision</th>
+                        <th scope="col">NIC</th>
+                        <th scope="col">Role</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>';
+
+                    while ($row = $result->fetch_assoc()) {
+                        echo '<tr>
+                        <td>' . htmlspecialchars($row['id']) . '</td>
+                        <td>' . htmlspecialchars($row['name']) . '</td>
+                        <td>' . htmlspecialchars($row['designation']) . '</td>
+                        <td>' . htmlspecialchars($row['dept']) . '</td>
+                        <td>' . htmlspecialchars($row['nic']) . '</td>
+                        <td>' . htmlspecialchars($row['role']) . '</td>
+                        <td>
+                            <a class="btn btn-primary btn-sm" href="update_user.php?id=' . htmlspecialchars($row['id']) . '">Edit</a> 
+                            <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete(' . htmlspecialchars($row['id']) . ')">Delete</a>
+                        </td>
+                      </tr>';
+                    }
+
+                    echo '</tbody></table>';
+                    echo '</div>';
+                } else {
+                    echo '<div class="alert alert-warning" role="alert">No records found.</div>';
+                }
+                ?>
+
             </div>
-            <!-- partial -->
+
+            <script>
+                document.getElementById('searchInput').addEventListener('keyup', function() {
+                    var input = document.getElementById('searchInput').value.toLowerCase();
+                    var table = document.getElementById('userTable');
+                    var trs = table.getElementsByTagName('tr');
+
+                    for (var i = 1; i < trs.length; i++) {
+                        var tds = trs[i].getElementsByTagName('td');
+                        var match = false;
+
+                        for (var j = 0; j < tds.length; j++) {
+                            if (tds[j].innerText.toLowerCase().indexOf(input) > -1) {
+                                match = true;
+                                break;
+                            }
+                        }
+
+                        trs[i].style.display = match ? '' : 'none';
+                    }
+                });
+
+                function confirmDelete(id) {
+                    if (confirm("Are you sure you want to delete this record?")) {
+                        window.location.href = 'delete_user.php?id=' + id;
+                    }
+                }
+            </script>
         </div>
-        <!-- main-panel ends -->
+        <!-- partial -->
+    </div>
+    <!-- main-panel ends -->
     </div>
     <!-- page-body-wrapper ends -->
     </div>

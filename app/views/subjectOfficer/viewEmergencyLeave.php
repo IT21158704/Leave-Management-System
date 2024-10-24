@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Staff Officer') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Employee') {
     header("Location: ../logout.php");
     exit();
 }
@@ -120,10 +120,17 @@ $conn->close();
         <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
-                <li class="nav-item">
+                
+            <li class="nav-item">
                     <a class="nav-link" href="employee_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="users.php">
+                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
+                        <span class="menu-title">Users</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -243,7 +250,7 @@ $conn->close();
                             $med_value = 0;
                         }
 
-                        if ($emergency_leave['status'] == 0 && $emergency_leave['emp_on_leave'] == $_SESSION['user_id']) {
+                        if ($emergency_leave['status'] == 0) {
                             echo '<a class="btn btn-primary float-right" href="leave_application.php?id=' . htmlspecialchars($emergency_leave['id']) . '&med=' . $med_value . '">Submit Leave Application</a>';
                         } else {
                             echo '<a class="btn btn-secondary float-right" href="emergencyLeaves.php">Back</a>';

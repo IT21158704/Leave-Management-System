@@ -7,7 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Head of Department') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Subject Officer') {
     header("Location: ../login.php");
     exit();
 }
@@ -203,8 +203,9 @@ if (isset($_POST['generate_pdf'])) {
         <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="head_of_department_dashboard.php">
+                
+            <li class="nav-item">
+                    <a class="nav-link" href="employee_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
                     </a>
@@ -213,6 +214,30 @@ if (isset($_POST['generate_pdf'])) {
                     <a class="nav-link" href="users.php">
                         <i class="mdi mdi-bookmark-outline menu-icon"></i>
                         <span class="menu-title">Users</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_application.php">
+                        <i class="mdi mdi-note-plus-outline menu-icon"></i>
+                        <span class="menu-title">Leave Application</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_application_history.php">
+                        <i class="mdi mdi-history menu-icon"></i>
+                        <span class="menu-title">Leave History</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="leave_requests.php">
+                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
+                        <span class="menu-title">Leave Requests</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="emergencyLeaves.php">
+                        <i class="mdi mdi-alert-octagon-outline menu-icon"></i>
+                        <span class="menu-title">Emergency Leave</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -244,23 +269,29 @@ if (isset($_POST['generate_pdf'])) {
                     <div class="col-md-12 grid-margin stretch-card">
                         <div class="card">
                             <div class="card-body">
-                                <p class="card-title">Available Leaves in current year</p>
+                                <!-- Flexbox container for title and button -->
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <p class="card-title">Available Leaves in current year</p>
+                                    <a class="btn btn-link btn-sm" href="previusLeaves.php?id=<?php echo $id; ?>">Leave History (Previous Years)</a>
+                                </div>
+
                                 <div class="d-flex flex-wrap">
                                     <div class="me-5 mt-3">
                                         <p class="text-muted">Casual</p>
-                                        <h3 class="text-primary fs-30 font-weight-medium"><?php echo htmlspecialchars($casual); ?> </h3>
+                                        <h3 class="text-primary fs-30 font-weight-medium"><?php echo htmlspecialchars($casual); ?></h3>
                                     </div>
                                     <div class="me-5 mt-3">
                                         <p class="text-muted">Rest</p>
-                                        <h3 class="text-primary fs-30 font-weight-medium"><?php echo htmlspecialchars($rest); ?> </h3>
+                                        <h3 class="text-primary fs-30 font-weight-medium"><?php echo htmlspecialchars($rest); ?></h3>
                                     </div>
                                     <div class="mt-3">
                                         <p class="text-muted">All</p>
-                                        <h3 class="text-primary fs-30 font-weight-medium"><?php echo htmlspecialchars($rest + $casual); ?> </h3>
+                                        <h3 class="text-primary fs-30 font-weight-medium"><?php echo htmlspecialchars($rest + $casual); ?></h3>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
                     </div>
 
 

@@ -7,26 +7,13 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Staff Officer') {
-    header("Location: ../logout.php");
+    header("Location: ../login.php");
     exit();
 }
 
-$id = $_SESSION['user_id'];
-
-// Fetch existing data
-$query = "SELECT * FROM users WHERE id = ?";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("i", $id);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    $user = $result->fetch_assoc();
-} else {
-    die("Record not found");
-}
-
+$user_id = $_SESSION['user_id'];
 ?>
+
 
 <head>
     <!-- Required meta tags -->
@@ -47,6 +34,7 @@ if ($result->num_rows > 0) {
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
 </head>
 
 <body>
@@ -74,8 +62,7 @@ if ($result->num_rows > 0) {
         <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
-                
-                <li class="nav-item">
+            <li class="nav-item">
                     <a class="nav-link" href="staff_officer_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
@@ -128,27 +115,121 @@ if ($result->num_rows > 0) {
         <!-- partial -->
         <div class="main-panel">
             <div class="content-wrapper">
-                <div class="container mt-4 mb-4 d-flex justify-content-center">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex flex-column align-items-center text-center">
-                                <img src="../../assets/images/user.svg" alt="Admin" class="rounded-circle" width="150">
-                                <div class="mt-3">
-                                    <h4> <?php echo htmlspecialchars($user['name']); ?> </h4>
-                                    <p class="text-secondary mb-1">@<?php echo htmlspecialchars($user['email']); ?> </p>
-                                    <p class="text-secondary mb-1"><?php echo htmlspecialchars($user['nic']); ?> </p>
-                                    <p class="text-secondary mb-1"> <?php echo htmlspecialchars($user['designation']); ?> </p>
-                                    <p class="text-muted font-size-sm"><?php echo htmlspecialchars($user['dept']); ?> </p>
-                                    <a href="password_reset.php?id=<?php echo htmlspecialchars($user['id']); ?>" class="btn btn-outline-secondary">Reset Password</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <header>
+                    <h3 class="mb-4">
+                        Acting Requests History
+                    </h3>
+                </header>
+
+                <?php
+                // Fetch data from the database
+                $query = "
+    SELECT 
+        la.*,          
+        rs.replacement_status
+    FROM 
+        leave_applications la
+    JOIN 
+        request_status rs ON la.id = rs.leave_application_id
+    WHERE 
+        la.replacement = ? AND
+        rs.replacement_status != 'Pending'
+        ORDER BY la.id DESC;
+";
+
+                // Prepare the statement
+                $stmt = $conn->prepare($query);
+                $stmt->bind_param("i", $user_id); // Assuming $user_id is defined and holds the ID you want to filter by
+                $stmt->execute();
+                $result = $stmt->get_result(); // Get the result set
+
+                if ($result) {
+                    if ($result->num_rows > 0) {
+                        echo '<div class="table-responsive">';
+                        echo '<table class="table table-striped table-hover table-bordered" id="userTable">';
+                        echo '<thead class="thead-dark">
+            <tr>
+                <th scope="col">Leave ID</th>
+                <th scope="col">Date</th>
+                <th scope="col">Number of days</th>
+                <th scope="col">Reason / Dept</th>
+                <th scope="col">Status</th>
+                <th scope="col"></th>
+            </tr>
+        </thead>
+        <tbody>';
+
+                        while ($row = $result->fetch_assoc()) {
+                            echo '<tr>
+                <td>' . htmlspecialchars($row['id']) . '</td>
+                <td>' . htmlspecialchars($row['submissionDate']) . '</td>
+                <td>' . htmlspecialchars($row['leaveDates']) . '</td>
+                <td>' . htmlspecialchars($row['leaveReason']) . '</td>
+                <td>';
+
+                            // Display different badge colors based on status
+                            if ($row['status'] == 'pending') {
+                                echo '<label class="badge badge-warning">' . htmlspecialchars($row['status']) . '</label>';
+                            } elseif ($row['status'] == 'approved') {
+                                echo '<label class="badge badge-success">' . htmlspecialchars($row['status']) . '</label>';
+                            } elseif ($row['status'] == 'rejected') {
+                                echo '<label class="badge badge-danger">' . htmlspecialchars($row['status']) . '</label>';
+                            }
+
+                            echo '</td>
+                <td>
+                    <a class="btn btn-success btn-sm" href="view_request.php?id=' . htmlspecialchars($row['id']) . '">View</a>
+                </td>
+              </tr>';
+                        }
+
+                        echo '</tbody></table>';
+                        echo '</div>';
+                    } else {
+                        echo '<div class="alert alert-warning" role="alert">No records found.</div>';
+                    }
+                } else {
+                    // Handle the error
+                    echo '<div class="alert alert-danger" role="alert">Error executing query: ' . $conn->error . '</div>';
+                }
+
+                ?>
+
+
+
             </div>
-            <!-- partial -->
+
+            <script>
+                document.getElementById('searchInput').addEventListener('keyup', function() {
+                    var input = document.getElementById('searchInput').value.toLowerCase();
+                    var table = document.getElementById('userTable');
+                    var trs = table.getElementsByTagName('tr');
+
+                    for (var i = 1; i < trs.length; i++) {
+                        var tds = trs[i].getElementsByTagName('td');
+                        var match = false;
+
+                        for (var j = 0; j < tds.length; j++) {
+                            if (tds[j].innerText.toLowerCase().indexOf(input) > -1) {
+                                match = true;
+                                break;
+                            }
+                        }
+
+                        trs[i].style.display = match ? '' : 'none';
+                    }
+                });
+
+                function confirmDelete(id) {
+                    if (confirm("Are you sure you want to delete this record?")) {
+                        window.location.href = 'delete_user.php?id=' + id;
+                    }
+                }
+            </script>
         </div>
-        <!-- main-panel ends -->
+        <!-- partial -->
+    </div>
+    <!-- main-panel ends -->
     </div>
     <!-- page-body-wrapper ends -->
     </div>

@@ -219,7 +219,7 @@ $conn->close();
                             <input type="text" class="form-control" id="designation" name="designation" value="<?php echo htmlspecialchars($user['designation']); ?>" disabled required>
                         </div>
                         <div class="form-group col-md-6">
-                            <label for="dept">Department</label>
+                            <label for="dept">Devision</label>
                             <input type="text" class="form-control" id="dept" name="dept" value="<?php echo htmlspecialchars($user['dept']); ?>" disabled required>
                         </div>
                     </div>

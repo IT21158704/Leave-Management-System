@@ -13,8 +13,6 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Staff Officer') {
 
 $user_id = $_SESSION['user_id'];
 
-
-
 ?>
 
 
@@ -65,6 +63,7 @@ $user_id = $_SESSION['user_id'];
         <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
+                
                 <li class="nav-item">
                     <a class="nav-link" href="staff_officer_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
@@ -72,9 +71,15 @@ $user_id = $_SESSION['user_id'];
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="acting_requests.php">
+                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
+                        <span class="menu-title">Acting Requests</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="leave_requests.php">
                         <i class="mdi mdi-bookmark-outline menu-icon"></i>
-                        <span class="menu-title">Leave Requests</span>
+                        <span class="menu-title">Leave Requests </span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -114,7 +119,7 @@ $user_id = $_SESSION['user_id'];
             <div class="content-wrapper">
                 <header>
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3>Leave Requests List</h3>
+                        <h3>Leave Requests from Employees</h3>
                         <a href="leave_requests_history.php" class="btn btn-primary">History</a>
                     </div>
                 </header>
@@ -134,7 +139,7 @@ FROM leave_applications la
 JOIN request_status rs ON rs.leave_application_id = la.id
 JOIN users u ON JSON_CONTAINS(u.staff, JSON_QUOTE(CAST('$user_id' AS CHAR)), '$')
 WHERE la.status = 'pending'
-  AND rs.replacement_status = 'Approved';
+  AND rs.replacement_status = 'Approved' OR la.status = 'pending' AND la.emg = 1;
 ";
 
 
@@ -163,7 +168,7 @@ WHERE la.status = 'pending'
                     while ($row = $result->fetch_assoc()) {
                         echo '<tr>
                 <td>' . htmlspecialchars($row['id']) . '</td>
-                <td>' . htmlspecialchars($row['leaveReason']) . '</td> <!-- Display the supervising officer name -->
+                <td>' . htmlspecialchars($row['leaveReason']) . '</td> 
                 <td>' . htmlspecialchars($row['leaveDates']) . '</td>
                 <td>' . htmlspecialchars($row['commenceLeaveDate']) . '</td>
                 <td>' . htmlspecialchars($row['resumeDate']) . '</td>

@@ -5,7 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Admin') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Super Admin') {
     header("Location: ../login.php");
     exit();
 }
@@ -13,7 +13,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Admin') {
 $id = $_GET['id'];
 
 // Fetch all employees for the acting role dropdown
-$employees_query = "SELECT id, name, nic FROM users WHERE role = 'Employee' OR role = 'Staff Officer' OR role = 'Subject Officer' ";
+$employees_query = "SELECT id, name, nic FROM users WHERE role = 'Employee'";
 $employees_result = $conn->query($employees_query);
 
 // Fetch all departments for the department dropdown
@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $dept = $_POST['dept'];
     $nic = $_POST['nic'];
     $email = $_POST['email'];
-    $role = $_POST['role'];
+    $role = 'Admin';
     $acting = $_POST['replacement'];
     $staffOfficers = $_POST['staff_officers']; // Array of selected staff officers
 
@@ -123,8 +123,9 @@ $conn->close();
             <!-- partial:partials/_sidebar.html -->
             <nav class="sidebar sidebar-offcanvas" id="sidebar">
                 <ul class="nav">
+
                     <li class="nav-item">
-                        <a class="nav-link" href="admin_dashboard.php">
+                        <a class="nav-link" href="super_admin_dashboard.php">
                             <i class="icon-grid menu-icon"></i>
                             <span class="menu-title">Dashboard</span>
                         </a>
@@ -132,13 +133,13 @@ $conn->close();
                     <li class="nav-item">
                         <a class="nav-link" href="view_users.php">
                             <i class="mdi mdi-account-outline menu-icon"></i>
-                            <span class="menu-title">View Users</span>
+                            <span class="menu-title">Admins</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="add_user.php">
-                            <i class="mdi mdi-account-plus-outline menu-icon"></i>
-                            <span class="menu-title">Add Users</span>
+                        <a class="nav-link" href="customize.php">
+                            <i class="mdi mdi-cog-outline menu-icon"></i>
+                            <span class="menu-title">Customize Sys.</span>
                         </a>
                     </li>
                 <li class="nav-item">
@@ -189,7 +190,7 @@ $conn->close();
                                 }
                                 ?>
                             </select>
-                            <div class="invalid-feedback">Please enter the department.</div>
+                            <div class="invalid-feedback">Please enter the devision.</div>
                         </div>
 
                         <div class="form-group">
@@ -199,48 +200,8 @@ $conn->close();
                         </div>
                         <div class="form-group">
                             <label for="email">Email</label>
-                            <input type="text" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($row['email']); ?>" required>
+                            <input type="text" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($row['email']); ?>">
                             <div class="invalid-feedback">Please enter a Email.</div>
-                        </div>
-                        <div class="form-group">
-                            <label for="role">Role</label>
-                            <select class="form-control" id="role" name="role" required>
-
-
-                                <?php
-                                if ($roles_result->num_rows > 0) {
-                                    while ($role = $roles_result->fetch_assoc()) {
-                                        $selected = ($row['role'] == $role['name']) ? 'selected' : '';
-                                        echo '<option value="' . htmlspecialchars($role['name']) . '" ' . $selected . '>' . htmlspecialchars($role['name']) . '</option>';
-                                    }
-                                }
-                                ?>
-                            </select>
-                            <div class="invalid-feedback">Please select a role.</div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="replacement">Name of Acting Employee</label>
-                            <select class="form-control" id="replacement" name="replacement">
-                                <option value="NULL" <?php if (is_null($currentReplacement)) echo 'selected'; ?>>None</option> <!-- Option for no acting employee -->
-                                <?php
-                                if ($employees_result->num_rows > 0) {
-                                    while ($employee = $employees_result->fetch_assoc()) {
-                                        $selected = ($employee['id'] == $currentReplacement) ? 'selected' : '';
-                                        echo '<option value="' . htmlspecialchars($employee['id']) . '" ' . $selected . '>' . htmlspecialchars($employee['name']) . '</option>';
-                                    }
-                                }
-                                ?>
-                            </select>
-                            <div class="invalid-feedback">Please select a replacement.</div>
-                        </div>
-                        <!-- Staff Officers Multiple Select -->
-                        <div class="form-group">
-                            <label for="staff_officers">Select Staff Officers</label>
-                            <select multiple class="form-control" id="staff_officers" name="staff_officers[]">
-                                <!-- Options will be populated dynamically via JS -->
-                            </select>
-                            <div class="invalid-feedback">Please select at least one staff officer.</div>
                         </div>
 
                         <button type="submit" class="btn btn-primary">Save</button>
@@ -267,7 +228,7 @@ $conn->close();
                         staffOfficers.forEach(function(staff) {
                             var option = document.createElement('option');
                             option.value = staff.id;
-                            option.text = staff.name + ' (' + staff.designation + ')';
+                            option.text = staff.name + ' (' + staff.nic + ')';
                             // Check if the staff is already selected
                             if (<?php echo json_encode($selectedStaffOfficers); ?>.includes(staff.id.toString())) {
                                 option.selected = true;
