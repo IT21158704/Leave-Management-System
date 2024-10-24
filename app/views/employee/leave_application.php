@@ -20,7 +20,7 @@ if (isset($_GET['id']) && !empty($_GET['id'])) {
     $emergency_id = $_GET['id'];
 }
 
-$med = 0;
+$med = null;
 
 if (isset($_GET['med']) && !empty($_GET['med'])) {
     $med = $_GET['med'];
@@ -71,17 +71,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $fullReason = $_POST['fullReason'];
     $submissionDate = date('Y-m-d H:i:s');
 
+    if ($emergency_id != null ){
+        $emg = 1;
+    }else{
+        $emg = 0;
+    }
+
     // Validate required fields
     if (empty($leaveDates) || empty($leaveReason) || empty($firstAppointmentDate) || empty($commenceLeaveDate) || empty($resumeDate) || empty($addressDuringLeave) || empty($fullReason)) {
         die("Please fill in all required fields.");
     }
 
     // Prepare the SQL statement
-    $query = "INSERT INTO leave_applications (user_id, leaveDates, leaveReason, firstAppointmentDate, commenceLeaveDate, resumeDate, addressDuringLeave, replacement, submissionDate, fullReason, status) 
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
+    $query = "INSERT INTO leave_applications (user_id, leaveDates, leaveReason, firstAppointmentDate, commenceLeaveDate, resumeDate, addressDuringLeave, replacement, submissionDate, fullReason, status, emg) 
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)";
 
     if ($stmt = $conn->prepare($query)) {
-        $stmt->bind_param("iisssssiss", $user_id, $leaveDates, $leaveReason, $firstAppointmentDate, $commenceLeaveDate, $resumeDate, $addressDuringLeave, $replacement, $submissionDate, $fullReason);
+        $stmt->bind_param("iisssssisss", $user_id, $leaveDates, $leaveReason, $firstAppointmentDate, $commenceLeaveDate, $resumeDate, $addressDuringLeave, $replacement, $submissionDate, $fullReason, $emg);
 
         if ($stmt->execute()) {
             // Get the last inserted ID (leave_application_id)
@@ -124,7 +130,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
                     }
                 }
 
-                if ($user['acting'] != null) {
+                if ($user['acting'] != null && $emergency_id == null) {
                     // Fetch existing data (email and name)
                     $query = "SELECT email, name FROM users WHERE id = ?";
                     $stmt = $conn->prepare($query);

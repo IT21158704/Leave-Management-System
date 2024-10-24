@@ -27,21 +27,25 @@ if ($result->num_rows > 0) {
     $total_applications =  "No leave applications found.";
 }
 
+
 $query = "
-    SELECT COUNT(*) AS total_count
-    FROM leave_applications la
-    JOIN request_status rs ON rs.leave_application_id = la.id
-    JOIN users u ON JSON_CONTAINS(u.staff, JSON_QUOTE(CAST('$id' AS CHAR)), '$')
-    WHERE rs.staff_status = 'Pending';
+SELECT COUNT(DISTINCT la.id) AS total_count
+FROM leave_applications la
+JOIN request_status rs ON rs.leave_application_id = la.id
+JOIN users u ON JSON_CONTAINS(u.staff, JSON_QUOTE(CAST('$id' AS CHAR)), '$')
+WHERE (la.status = 'pending' AND rs.replacement_status = 'Approved')
+   OR (la.status = 'pending' AND la.emg = 1);
 ";
 
+
 $result = $conn->query($query);
-if ($result->num_rows > 0) {
+
+if ($result && $result->num_rows > 0) {
     // Fetch the count and store it in a variable
     $row = $result->fetch_assoc();
     $total_requests = $row['total_count'];
 } else {
-    $total_requests =  "No leave applications found.";
+    $total_requests = "No leave applications found.";
 }
 
 $sql = "SELECT casual_leaves, rest_leaves FROM available_leaves WHERE user_id = $id";
@@ -121,9 +125,15 @@ if ($result->num_rows > 0) {
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="acting_requests.php">
+                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
+                        <span class="menu-title">Acting Requests</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="leave_requests.php">
                         <i class="mdi mdi-bookmark-outline menu-icon"></i>
-                        <span class="menu-title">Leave Requests</span>
+                        <span class="menu-title">Leave Requests </span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -183,7 +193,7 @@ if ($result->num_rows > 0) {
                         <div class="col-md-6 mb-4 stretch-card transparent">
                             <div class="card card-tale">
                                 <div class="card-body">
-                                    <p class="mb-4">Leave Requests</p>
+                                    <p class="mb-4">Leave Requests from Employees</p>
                                     <p class="fs-30 mb-2"><?php echo htmlspecialchars($total_requests); ?></p>
                                 </div>
                             </div>

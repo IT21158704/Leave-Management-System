@@ -12,7 +12,6 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Staff Officer') {
 }
 
 $user_id = $_SESSION['user_id'];
-
 ?>
 
 
@@ -63,8 +62,7 @@ $user_id = $_SESSION['user_id'];
         <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
-                
-                <li class="nav-item">
+            <li class="nav-item">
                     <a class="nav-link" href="staff_officer_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
@@ -118,74 +116,87 @@ $user_id = $_SESSION['user_id'];
         <div class="main-panel">
             <div class="content-wrapper">
                 <header>
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3>Emergency Leaves for you</h3>
-                    </div>
-
+                    <h3 class="mb-4">
+                        Acting Requests History
+                    </h3>
                 </header>
 
                 <?php
-                // Fetch data from database with JOIN to get the name from users table and supervisingOfficer name
+                // Fetch data from the database
                 $query = "
-SELECT DISTINCT la.*, u.name AS user_name, u.dept AS user_dept, u2.dept AS emp_dept
-FROM emergency_leave la
-JOIN users u ON la.user_id = u.id
-JOIN users u2 ON la.emp_on_leave = u2.id
-JOIN users u3 ON JSON_CONTAINS(u3.staff, JSON_QUOTE(CAST('$user_id' AS CHAR)), '$')
-WHERE la.status = '0' AND u.dept = u2.dept
-ORDER BY la.id DESC;
+    SELECT 
+        la.*,          
+        rs.replacement_status
+    FROM 
+        leave_applications la
+    JOIN 
+        request_status rs ON la.id = rs.leave_application_id
+    WHERE 
+        la.replacement = ? AND
+        rs.replacement_status != 'Pending'
+        ORDER BY la.id DESC;
 ";
 
-                $result = $conn->query($query);
-                if (!$result) {
-                    echo "Error: " . $conn->error;
-                }
+                // Prepare the statement
+                $stmt = $conn->prepare($query);
+                $stmt->bind_param("i", $user_id); // Assuming $user_id is defined and holds the ID you want to filter by
+                $stmt->execute();
+                $result = $stmt->get_result(); // Get the result set
 
-                if ($result->num_rows > 0) {
-                    echo '<div class="table-responsive">';
-                    echo '<table class="table table-striped table-hover table-bordered" id="userTable">';
-                    echo '<thead class="thead-dark">
+                if ($result) {
+                    if ($result->num_rows > 0) {
+                        echo '<div class="table-responsive">';
+                        echo '<table class="table table-striped table-hover table-bordered" id="userTable">';
+                        echo '<thead class="thead-dark">
             <tr>
-                <th scope="col">ID</th>
-                <th scope="col">Submitted By</th>
-                <th scope="col">Commence Leave Date</th>
-                <th scope="col">Resume Date</th>
-                <th scope="col">Leave Application</th>
-                <th scope="col">Action</th>
+                <th scope="col">Leave ID</th>
+                <th scope="col">Date</th>
+                <th scope="col">Number of days</th>
+                <th scope="col">Reason / Dept</th>
+                <th scope="col">Status</th>
+                <th scope="col"></th>
             </tr>
-          </thead>
-          <tbody>';
+        </thead>
+        <tbody>';
 
-                    while ($row = $result->fetch_assoc()) {
-                        echo '<tr>
+                        while ($row = $result->fetch_assoc()) {
+                            echo '<tr>
                 <td>' . htmlspecialchars($row['id']) . '</td>
-                <td>' . htmlspecialchars($row['user_name']) . '</td> <!-- Display the user name -->
-                <td>' . htmlspecialchars($row['commence_leave_date']) . '</td>
-                <td>' . htmlspecialchars($row['resume_date']) . '</td>
+                <td>' . htmlspecialchars($row['submissionDate']) . '</td>
+                <td>' . htmlspecialchars($row['leaveDates']) . '</td>
+                <td>' . htmlspecialchars($row['leaveReason']) . '</td>
                 <td>';
 
-                        // Check the status and display appropriate text
-                        if ($row['status'] == 0) {
-                            echo '<span style="color: red;">Application not Submitted</span>';
-                        } elseif ($row['status'] == 1) {
-                            echo 'Application Submitted';
-                        } else {
-                            echo htmlspecialchars($row['status']);
-                        }
+                            // Display different badge colors based on status
+                            if ($row['status'] == 'pending') {
+                                echo '<label class="badge badge-warning">' . htmlspecialchars($row['status']) . '</label>';
+                            } elseif ($row['status'] == 'approved') {
+                                echo '<label class="badge badge-success">' . htmlspecialchars($row['status']) . '</label>';
+                            } elseif ($row['status'] == 'rejected') {
+                                echo '<label class="badge badge-danger">' . htmlspecialchars($row['status']) . '</label>';
+                            }
 
-                        echo '</td>
+                            echo '</td>
                 <td>
-                    <a class="btn btn-primary btn-sm" href="viewEmergencyLeave.php?id=' . htmlspecialchars($row['id']) . '">View Details</a>
+                    <a class="btn btn-success btn-sm" href="view_request.php?id=' . htmlspecialchars($row['id']) . '">View</a>
                 </td>
               </tr>';
-                    }
+                        }
 
-                    echo '</tbody></table>';
-                    echo '</div>';
+                        echo '</tbody></table>';
+                        echo '</div>';
+                    } else {
+                        echo '<div class="alert alert-warning" role="alert">No records found.</div>';
+                    }
                 } else {
-                    echo '<div class="alert alert-warning" role="alert">No records found.</div>';
+                    // Handle the error
+                    echo '<div class="alert alert-danger" role="alert">Error executing query: ' . $conn->error . '</div>';
                 }
+
                 ?>
+
+
+
             </div>
 
             <script>
