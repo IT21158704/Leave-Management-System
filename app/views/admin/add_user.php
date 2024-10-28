@@ -43,9 +43,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("i", $new_user_id);
 
         if ($stmt->execute()) {
-            $body = newUserEmailBody($name, $nic, $temp);
-            sendMail($email, $name, 'Welcome to Leave Management System', $body);
-            $successMessage = 'Registration successful!';
+            $query = "INSERT INTO short_leaves (user_id) VALUES (?)";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("i", $new_user_id);
+
+            if ($stmt->execute()) {
+                $body = newUserEmailBody($name, $nic, $temp);
+                sendMail($email, $name, 'Welcome to Leave Management System', $body);
+                $successMessage = 'Registration successful!';
+            } else {
+                $error_message = $conn->error;
+            }
         } else {
             $error_message = $conn->error;
         }

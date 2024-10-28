@@ -1,5 +1,4 @@
 <?php
-
 require('../../assets/vendors/fpdf/fpdf.php');
 include('../../../config/config.php');
 
@@ -12,7 +11,6 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Subject Officer') {
     exit();
 }
 
-// $user_id = '38'; // For testing purpose, hardcoded, replace with your logic
 $user_id = $_GET['id'];
 ?>
 
@@ -68,62 +66,15 @@ $user_id = $_GET['id'];
     <div class="container-fluid page-body-wrapper">
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
-
-
-                <li class="nav-item">
-                    <a class="nav-link" href="subject_officer_dashboard.php">
-                        <i class="icon-grid menu-icon"></i>
-                        <span class="menu-title">Home</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="users.php">
-                        <i class="mdi mdi-account-multiple-outline menu-icon"></i>
-                        <span class="menu-title">Users</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="shortLeavs.php">
-                        <i class="mdi mdi-timelapse menu-icon"></i>
-                        <span class="menu-title">Short Leaves</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="leave_application.php">
-                        <i class="mdi mdi-note-plus-outline menu-icon"></i>
-                        <span class="menu-title">Leave Application</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="leave_application_history.php">
-                        <i class="mdi mdi-history menu-icon"></i>
-                        <span class="menu-title">Leave History</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="leave_requests.php">
-                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
-                        <span class="menu-title">Leave Requests</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="emergencyLeaves.php">
-                        <i class="mdi mdi-alert-octagon-outline menu-icon"></i>
-                        <span class="menu-title">Emergency Leave</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="profile.php">
-                        <i class="icon-head menu-icon"></i>
-                        <span class="menu-title">Profile</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="../logout.php">
-                        <i class="mdi mdi-logout menu-icon"></i>
-                        <span class="menu-title">Logout</span>
-                    </a>
-                </li>
+                <li class="nav-item"><a class="nav-link" href="subject_officer_dashboard.php"><i class="icon-grid menu-icon"></i><span class="menu-title">Home</span></a></li>
+                <li class="nav-item"><a class="nav-link" href="users.php"><i class="mdi mdi-account-multiple-outline menu-icon"></i><span class="menu-title">Users</span></a></li>
+                <li class="nav-item"><a class="nav-link" href="shortLeavs.php"><i class="mdi mdi-timelapse menu-icon"></i><span class="menu-title">Short Leaves</span></a></li>
+                <li class="nav-item"><a class="nav-link" href="leave_application.php"><i class="mdi mdi-note-plus-outline menu-icon"></i><span class="menu-title">Leave Application</span></a></li>
+                <li class="nav-item"><a class="nav-link" href="leave_application_history.php"><i class="mdi mdi-history menu-icon"></i><span class="menu-title">Leave History</span></a></li>
+                <li class="nav-item"><a class="nav-link" href="leave_requests.php"><i class="mdi mdi-bookmark-outline menu-icon"></i><span class="menu-title">Leave Requests</span></a></li>
+                <li class="nav-item"><a class="nav-link" href="emergencyLeaves.php"><i class="mdi mdi-alert-octagon-outline menu-icon"></i><span class="menu-title">Emergency Leave</span></a></li>
+                <li class="nav-item"><a class="nav-link" href="profile.php"><i class="icon-head menu-icon"></i><span class="menu-title">Profile</span></a></li>
+                <li class="nav-item"><a class="nav-link" href="../logout.php"><i class="mdi mdi-logout menu-icon"></i><span class="menu-title">Logout</span></a></li>
             </ul>
         </nav>
 
@@ -134,15 +85,43 @@ $user_id = $_GET['id'];
                         <div class="card">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <p class="card-title">Leave History</p>
+                                    <p class="card-title">Short Leave History</p>
                                     <div class="d-flex">
                                         <div class="mb-3 mr-2">
                                             <select class="btn btn-outline" id="yearPicker" onchange="filterTable()">
                                                 <option value="">Select Year</option>
                                                 <?php
-                                                $currentYear = date("Y");
-                                                for ($i = $currentYear; $i >= 2020; $i--) {
-                                                    echo "<option value='$i'>$i</option>";
+                                                // Fetch and display years (modify as per your requirements)
+                                                for ($year = date("Y"); $year >= 2000; $year--) {
+                                                    echo "<option value='$year'>$year</option>";
+                                                }
+                                                ?>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3 mr-2">
+                                            <select class="btn btn-outline" id="monthPicker" onchange="filterTable()">
+                                                <option value="">Select Month</option>
+                                                <?php
+                                                // Array of month names
+                                                $months = [
+                                                    "January",
+                                                    "February",
+                                                    "March",
+                                                    "April",
+                                                    "May",
+                                                    "June",
+                                                    "July",
+                                                    "August",
+                                                    "September",
+                                                    "October",
+                                                    "November",
+                                                    "December"
+                                                ];
+
+                                                // Loop through the array to create options
+                                                foreach ($months as $index => $month) {
+                                                    // $index + 1 gives the month number (1 to 12)
+                                                    echo "<option value='" . ($index + 1) . "'>$month</option>";
                                                 }
                                                 ?>
                                             </select>
@@ -154,7 +133,7 @@ $user_id = $_GET['id'];
                                     <div class="col-md-12">
                                         <?php
                                         // Fetch data from the database for a given user_id
-                                        $sql = "SELECT year, casual_leaves, rest_leaves FROM leave_history WHERE user_id = $user_id";
+                                        $sql = "SELECT id, short_leaves, timestamp FROM short_leave_history WHERE user_id = $user_id ORDER BY timestamp DESC";
                                         $result = $conn->query($sql);
 
                                         if ($result->num_rows > 0) {
@@ -162,18 +141,18 @@ $user_id = $_GET['id'];
                                             echo "<table id='leaveTable'>
                                                     <thead>
                                                         <tr>
-                                                            <th>Year</th>
-                                                            <th>Casual Leaves</th>
-                                                            <th>Rest Leaves</th>
+                                                            <th>Id</th>
+                                                            <th>Short Leaves</th>
+                                                            <th>Update Date</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>";
 
                                             while ($row = $result->fetch_assoc()) {
                                                 echo "<tr>
-                                                        <td>" . $row['year'] . "</td>
-                                                        <td>" . $row['casual_leaves'] . "</td>
-                                                        <td>" . $row['rest_leaves'] . "</td>
+                                                        <td>" . $row['id'] . "</td>
+                                                        <td>" . $row['short_leaves'] . "</td>
+                                                        <td>" . $row['timestamp'] . "</td>
                                                       </tr>";
                                             }
 
@@ -193,17 +172,21 @@ $user_id = $_GET['id'];
     </div>
 
     <script>
-        // JavaScript function to filter table by year
+        // JavaScript function to filter table by month and year
         function filterTable() {
             var selectedYear = document.getElementById('yearPicker').value;
+            var selectedMonth = document.getElementById('monthPicker').value;
             var table = document.getElementById('leaveTable');
             var rows = table.getElementsByTagName('tr');
 
             for (var i = 1; i < rows.length; i++) { // Start from 1 to skip the table header
-                var yearCell = rows[i].getElementsByTagName('td')[0]; // Year is in the first cell
-                if (yearCell) {
-                    var year = yearCell.textContent || yearCell.innerText;
-                    if (selectedYear === "" || year === selectedYear) {
+                var dateCell = rows[i].getElementsByTagName('td')[2]; // Date is in the third cell
+                if (dateCell) {
+                    var date = new Date(dateCell.textContent || dateCell.innerText);
+                    var year = date.getFullYear();
+                    var month = date.getMonth() + 1; // Months are 0-based
+
+                    if ((selectedYear === "" || year == selectedYear) && (selectedMonth === "" || month == selectedMonth)) {
                         rows[i].style.display = ""; // Show row
                     } else {
                         rows[i].style.display = "none"; // Hide row

@@ -139,7 +139,7 @@ $user_id = $_SESSION['user_id'];
     FROM leave_applications la
     JOIN users u ON la.user_id = u.id
     JOIN request_status rs ON la.id = rs.leave_application_id
-    WHERE la.replacement = '$user_id' AND la.status = 'pending' AND rs.replacement_status = 'Pending'
+    WHERE la.replacement = '$user_id' AND la.status = 'pending' AND rs.replacement_status = 'Pending'  AND la.emg = 0
     ORDER BY la.id DESC;
 ";
                 $result = $conn->query($query);

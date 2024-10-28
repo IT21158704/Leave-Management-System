@@ -119,7 +119,7 @@ $user_id = $_SESSION['user_id'];
             <div class="content-wrapper">
                 <header>
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3>Emergency Leaves for you</h3>
+                        <h3>Emergency Leaves by Employees</h3>
                     </div>
 
                 </header>

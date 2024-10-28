@@ -1,5 +1,6 @@
 <?php
 
+require('../../assets/vendors/fpdf/fpdf.php');
 include('../../../config/config.php');
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -11,9 +12,92 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Employee') {
     exit();
 }
 
-$user_id = $_SESSION['user_id'];
+
+$id = $_SESSION['user_id'];
+
+$sql = "SELECT casual_leaves, rest_leaves FROM available_leaves WHERE user_id = $id";
+$result = $conn->query($sql);
+if ($result->num_rows > 0) {
+    $row = $result->fetch_assoc();
+    $casual = $row["casual_leaves"];
+    $rest = $row["rest_leaves"];
+}
+
+$short_leaves = 0;
+$monthName = 'No Short Leaves';
+$sql = "SELECT * FROM short_leaves WHERE user_id = $id";
+$result = $conn->query($sql);
+if ($result->num_rows > 0) {
+    $row = $result->fetch_assoc();
+    $short_leaves = $row["short_leaves"];
+    $dateString = $row["modified_date"];
+    $timestamp = strtotime($dateString);
+    $monthName = date('F', $timestamp);
+}
 
 
+$sql = "SELECT 
+            SUM(leaveDates) AS totalLeaveDays,
+            SUM(CASE WHEN leaveReason = 'Casual' THEN 1 ELSE 0 END) AS casualLeaveCount,
+            SUM(CASE WHEN leaveReason = 'Rest' THEN 1 ELSE 0 END) AS restLeaveCount,
+            SUM(CASE WHEN leaveReason = 'Other' THEN 1 ELSE 0 END) AS otherLeaveCount
+        FROM 
+            leave_applications
+        WHERE 
+            user_id = ?
+            AND status = 'approved'
+            AND YEAR(submissionDate) = YEAR(CURRENT_DATE())";
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows > 0) {
+    $row = $result->fetch_assoc();
+
+    // Store the values in variables
+    $totalLeaveDays = $row['totalLeaveDays'];
+    $casualLeaveCount = $row['casualLeaveCount'];
+    $restLeaveCount = $row['restLeaveCount'];
+    $otherLeaveCount = $row['otherLeaveCount'];
+} else {
+    $totalLeaveDays = 0;
+    $casualLeaveCount = 0;
+    $restLeaveCount = 0;
+    $otherLeaveCount = 0;
+}
+
+$stmt->close();
+
+
+$months = [
+    1 => 'January',
+    2 => 'February',
+    3 => 'March',
+    4 => 'April',
+    5 => 'May',
+    6 => 'June',
+    7 => 'July',
+    8 => 'August',
+    9 => 'September',
+    10 => 'October',
+    11 => 'November',
+    12 => 'December'
+];
+
+// Fetch existing user data
+$query = "SELECT * FROM users WHERE id = ?";
+$stmt = $conn->prepare($query);
+$stmt->bind_param("i", $id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows > 0) {
+    $user = $result->fetch_assoc();
+} else {
+    die("Record not found");
+}
 
 ?>
 
@@ -119,122 +203,77 @@ $user_id = $_SESSION['user_id'];
         <div class="main-panel">
             <div class="content-wrapper">
                 <header>
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3>Leave Requests List</h3>
-                        <a href="leave_requests_history.php" class="btn btn-primary">History</a>
-                    </div>
+                    <h3 class="mb-4">
+                        <span><?php echo htmlspecialchars($user['name']); ?></span>
+                        <br>
+                        <span class="text-muted" style="opacity: 0.5; font-size: 20px;"><?php echo htmlspecialchars('NIC : ' . $user['nic']); ?></span>
+                    </h3>
                 </header>
 
-                <?php
-                if (!isset($_GET['status'])) {
-                } else {
-                    echo '<div class="alert alert-success" role="alert">Record Updated!.</div>';
-                }
-                ?>
+                <div class="row">
+                    <div class="col-md-12 grid-margin stretch-card">
+                        <div class="card">
+                            <div class="card-body">
+                                <!-- Flexbox container for title and button -->
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <p class="card-title">Available Leaves in current year</p>
+                                    <a class="btn btn-link btn-sm" href="previusLeaves.php">Leave History (Previous Years)</a>
+                                </div>
 
-                <?php
-                // Fetch data from database with JOIN to get the name from users table and supervisingOfficer name
-                $query = "
-    SELECT la.*, u.name AS user_name
-    FROM leave_applications la
-    JOIN users u ON la.user_id = u.id
-    JOIN request_status rs ON la.id = rs.leave_application_id
-    WHERE la.replacement = '$user_id' AND la.status = 'pending' AND rs.replacement_status = 'Pending' AND la.emg = 0
-    ORDER BY la.id DESC;
-";
-                $result = $conn->query($query);
-                if (!$result) {
-                    echo "Error: " . $conn->error;
-                }
+                                <div class="d-flex flex-wrap">
+                                    <div class="me-5 mt-3">
+                                        <p class="text-muted">Casual</p>
+                                        <h3 class="text-primary fs-30 font-weight-medium"><?php echo htmlspecialchars($casual); ?></h3>
+                                    </div>
+                                    <div class="me-5 mt-3">
+                                        <p class="text-muted">Rest</p>
+                                        <h3 class="text-primary fs-30 font-weight-medium"><?php echo htmlspecialchars($rest); ?></h3>
+                                    </div>
+                                    <div class="mt-3">
+                                        <p class="text-muted">All</p>
+                                        <h3 class="text-primary fs-30 font-weight-medium"><?php echo htmlspecialchars($rest + $casual); ?></h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                if ($result->num_rows > 0) {
-                    echo '<div class="table-responsive">';
-                    echo '<table class="table table-striped table-hover table-bordered" id="userTable">';
-                    echo '<thead class="thead-dark">
-            <tr>
-                <th scope="col">ID</th>
-                <th scope="col">Name</th>
-                <th scope="col">Leave Dates</th>
-                <th scope="col">Commence Leave Date</th>
-                <th scope="col">Resume Date</th>
-                <th scope="col">Action</th>
-            </tr>
-          </thead>
-          <tbody>';
 
-                    while ($row = $result->fetch_assoc()) {
-                        echo '<tr>
-                <td>' . htmlspecialchars($row['id']) . '</td>
-                <td>' . htmlspecialchars($row['user_name']) . '</td> <!-- Display the user name -->
-                <td>' . htmlspecialchars($row['leaveDates']) . '</td>
-                <td>' . htmlspecialchars($row['commenceLeaveDate']) . '</td>
-                <td>' . htmlspecialchars($row['resumeDate']) . '</td>
-                <td>
-                    <a class="btn btn-primary btn-sm" href="view_request.php?id=' . htmlspecialchars($row['id']) . '">View Details</a>
-                </td>
-              </tr>';
-                    }
 
-                    echo '</tbody></table>';
-                    echo '</div>';
-                } else {
-                    echo '<div class="alert alert-warning" role="alert">No records found.</div>';
-                }
-                ?>
+                <div class="row">
+                    <div class="col-md-12 grid-margin stretch-card">
+                        <div class="card">
+                            <div class="card-body">
+                                <!-- Flexbox container for title and button -->
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <p class="card-title">Short Leaves in last month</p>
+                                    <a class="btn btn-link btn-sm" href="previusShortLeaves.php">Short Leave History (Previous Months)</a>
+                                </div>
+
+                                <div class="d-flex flex-wrap">
+                                    <div class="me-5 mt-3">
+                                        <p class="text-muted"><?php echo htmlspecialchars($monthName); ?></p>
+                                        <h3 class="text-primary fs-30 font-weight-medium"><?php echo htmlspecialchars($short_leaves); ?></h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            <script>
-                document.getElementById('searchInput').addEventListener('keyup', function() {
-                    var input = document.getElementById('searchInput').value.toLowerCase();
-                    var table = document.getElementById('userTable');
-                    var trs = table.getElementsByTagName('tr');
-
-                    for (var i = 1; i < trs.length; i++) {
-                        var tds = trs[i].getElementsByTagName('td');
-                        var match = false;
-
-                        for (var j = 0; j < tds.length; j++) {
-                            if (tds[j].innerText.toLowerCase().indexOf(input) > -1) {
-                                match = true;
-                                break;
-                            }
-                        }
-
-                        trs[i].style.display = match ? '' : 'none';
-                    }
-                });
-
-                function confirmDelete(id) {
-                    if (confirm("Are you sure you want to delete this record?")) {
-                        window.location.href = 'delete_user.php?id=' + id;
-                    }
-                }
-            </script>
         </div>
-        <!-- partial -->
+    </div>
+    <!-- partial -->
     </div>
     <!-- main-panel ends -->
     </div>
     <!-- page-body-wrapper ends -->
     </div>
-    <!-- container-scroller -->
-    <!-- plugins:js -->
-    <script src="../../assets/vendors/js/vendor.bundle.base.js"></script>
-    <!-- endinject -->
-    <!-- Plugin js for this page -->
-    <script src="../../assets/vendors/chart.js/chart.umd.js"></script>
-    <script src="../../assets/vendors/datatables.net/jquery.dataTables.js"></script>
-    <script src="../../assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js"></script>
-    <script src="../../assets/js/dataTables.select.min.js"></script>
-    <!-- End plugin js for this page -->
-    <!-- inject:js -->
-    <script src="../../assets/js/off-canvas.js"></script>
-    <script src="../../assets/js/template.js"></script>
-    <script src="../../assets/js/settings.js"></script>
-    <script src="../../assets/js/todolist.js"></script>
-    <!-- endinject -->
-    <!-- Custom js for this page-->
-    <script src="../../assets/js/jquery.cookie.js" type="text/javascript"></script>
-    <script src="../../assets/js/dashboard.js"></script>
-    <!-- End custom js for this page-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.11/jspdf.plugin.autotable.min.js"></script>
+
+    
+
+
 </body>

@@ -131,7 +131,7 @@ VALUES (?, ?, ?, ?, ?, ?, 0)";
                     $receiverName = $row['name'];
 
                     $body = emergencyLeaveEmailBody($user['name'],  fetchUserName($empOnLeave, $conn), $commenceLeaveDate, $resumeDate, $reason);
-                    sendMail($receiverEmail, $receiverName,$user['name'] . ' Placed Leave Request for ' . fetchUserName($empOnLeave, $conn), $body);
+                    sendMail($receiverEmail, $receiverName, $user['name'] . ' Placed Leave Request for ' . fetchUserName($empOnLeave, $conn), $body);
                 }
             }
 
@@ -215,17 +215,22 @@ $conn->close();
         <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
-                
-            <li class="nav-item">
-                    <a class="nav-link" href="employee_dashboard.php">
+                <li class="nav-item">
+                    <a class="nav-link" href="subject_officer_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="users.php">
-                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
+                        <i class="mdi mdi-account-multiple-outline menu-icon"></i>
                         <span class="menu-title">Users</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="shortLeavs.php">
+                        <i class="mdi mdi-timelapse menu-icon"></i>
+                        <span class="menu-title">Short Leaves</span>
                     </a>
                 </li>
                 <li class="nav-item">

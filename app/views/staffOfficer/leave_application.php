@@ -81,7 +81,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
 
     if ($stmt = $conn->prepare($query)) {
-        $stmt->bind_param("iisssssiss", $user_id, $leaveDates, $leaveReason, $firstAppointmentDate, $commenceLeaveDate, $resumeDate, $addressDuringLeave, $replacement, $submissionDate, $fullReason);
+        $stmt->bind_param("idsssssiss", $user_id, $leaveDates, $leaveReason, $firstAppointmentDate, $commenceLeaveDate, $resumeDate, $addressDuringLeave, $replacement, $submissionDate, $fullReason);
 
         if ($stmt->execute()) {
             // Get the last inserted ID (leave_application_id)
@@ -389,7 +389,7 @@ $conn->close();
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label for="leaveDates">Number of days leave applied for</label>
-                            <input type="number" id="leaveDates" class="form-control" name="leaveDates" required>
+                            <input type="number" id="leaveDates" class="form-control" name="leaveDates" step="0.5" min="0" required>
                             <div class="invalid-feedback">Please enter the number of days leave applied for.</div>
                         </div>
 

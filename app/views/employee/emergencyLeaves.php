@@ -96,6 +96,12 @@ $user_id = $_SESSION['user_id'];
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="userProfile.php">
+                        <i class="icon-paper menu-icon"></i>
+                        <span class="menu-title">All Records</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="profile.php">
                         <i class="icon-head menu-icon"></i>
                         <span class="menu-title">Profile</span>
