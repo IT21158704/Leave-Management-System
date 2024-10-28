@@ -81,7 +81,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
 
     if ($stmt = $conn->prepare($query)) {
-        $stmt->bind_param("iisssssiss", $user_id, $leaveDates, $leaveReason, $firstAppointmentDate, $commenceLeaveDate, $resumeDate, $addressDuringLeave, $replacement, $submissionDate, $fullReason);
+        $stmt->bind_param("idsssssiss", $user_id, $leaveDates, $leaveReason, $firstAppointmentDate, $commenceLeaveDate, $resumeDate, $addressDuringLeave, $replacement, $submissionDate, $fullReason);
 
         if ($stmt->execute()) {
             // Get the last inserted ID (leave_application_id)
@@ -281,17 +281,24 @@ $conn->close();
         <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
-                
-            <li class="nav-item">
-                    <a class="nav-link" href="employee_dashboard.php">
+
+
+                <li class="nav-item">
+                    <a class="nav-link" href="subject_officer_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="users.php">
-                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
+                        <i class="mdi mdi-account-multiple-outline menu-icon"></i>
                         <span class="menu-title">Users</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="shortLeavs.php">
+                        <i class="mdi mdi-timelapse menu-icon"></i>
+                        <span class="menu-title">Short Leaves</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -389,14 +396,14 @@ $conn->close();
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label for="leaveDates">Number of days leave applied for</label>
-                            <input type="number" id="leaveDates" class="form-control" name="leaveDates" required>
+                            <input type="number" id="leaveDates" class="form-control" name="leaveDates" step="0.5" min="0" required>
                             <div class="invalid-feedback">Please enter the number of days leave applied for.</div>
                         </div>
 
                         <!-- <small id="passwordHelpBlock" class="form-text text-muted"> Your  </small> -->
                         <div class="form-group col-md-6">
                             <label for="availableLeaves">Available leaves for current year</label>
-                            <input type="text" id="availableLeaves" class="form-control" name="availableLeaves" value="Casual - <?php echo htmlspecialchars($avLeaves['casual_leaves']); ?>    |   Rest - <?php echo htmlspecialchars($avLeaves['rest_leaves']); ?>" disabled>
+                            <input type="text" id="availableLeaves" class="form-control" name="availableLeaves" value="Casual - <?php echo htmlspecialchars($avLeaves['casual_leaves']); ?>    |   Rest - <?php echo htmlspecialchars($avLeaves['rest_leaves']); ?>    |   Taken Other Leaves - <?php echo htmlspecialchars($avLeaves['other_leaves']); ?>" disabled>
                             <div class="invalid-feedback">Please enter the designation.</div>
                         </div>
                     </div>

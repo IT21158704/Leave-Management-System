@@ -1,5 +1,4 @@
 <?php
-
 include('../../../config/config.php');
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -11,11 +10,24 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Subject Officer') {
     exit();
 }
 
-$user_id = $_SESSION['user_id'];
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id']) && isset($_POST['short_leaves'])) {
+    $id = intval($_POST['id']);
+    $short_leaves = intval($_POST['short_leaves']);
 
+    $stmt = $conn->prepare("UPDATE short_leaves SET short_leaves = ?, modified_date = NOW() WHERE user_id = ?");
+    $stmt->bind_param("ii", $short_leaves, $id);
 
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'error' => $stmt->error]);
+    }
 
+    $stmt->close();
+    $conn->close();
+}
 ?>
+
 
 
 <head>
@@ -127,70 +139,54 @@ $user_id = $_SESSION['user_id'];
         <div class="main-panel">
             <div class="content-wrapper">
                 <header>
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3>Emergency Leaves by you</h3>
-                    </div>
-
+                    <h3 class="mb-4">Manage Short Leaves</h3>
                 </header>
 
-                <?php
-                if (!isset($_GET['status'])) {
-                } else {
-                    echo '<div class="alert alert-success" role="alert">Record Updated!.</div>';
-                }
-                ?>
+                <div class="mb-3">
+                    <input class="form-control" id="searchInput" type="text" placeholder="Search...">
+                </div>
 
                 <?php
-                // Fetch data from database with JOIN to get the name from users table and supervisingOfficer name
-                $query = "
-    SELECT la.*, u.name AS user_name
-    FROM emergency_leave la
-    JOIN users u ON la.emp_on_leave = u.id
-    WHERE la.user_id = '$user_id'
-ORDER BY la.id DESC;
-";
+                $query = "SELECT u.*, al.*, sl.*
+                      FROM users u
+                      JOIN available_leaves al ON u.id = al.user_id
+                      JOIN short_leaves sl ON u.id = sl.user_id
+                      WHERE u.role != 'Admin' 
+                      AND u.role != 'Super Admin' 
+                      AND u.dept != 'Secretary'";
                 $result = $conn->query($query);
-                if (!$result) {
-                    echo "Error: " . $conn->error;
-                }
 
                 if ($result->num_rows > 0) {
                     echo '<div class="table-responsive">';
                     echo '<table class="table table-striped table-hover table-bordered" id="userTable">';
                     echo '<thead class="thead-dark">
-            <tr>
-                <th scope="col">ID</th>
-                <th scope="col">Submitted For</th>
-                <th scope="col">Commence Leave Date</th>
-                <th scope="col">Resume Date</th>
-                <th scope="col">Leave Application</th>
-                <th scope="col">Action</th>
-            </tr>
-          </thead>
-          <tbody>';
+                        <tr>
+                            <th>Name</th>
+                            <th>Division</th>
+                            <th>Casual Leaves</th>
+                            <th>Rest Leaves</th>
+                            <th>Last Modified Date</th>
+                            <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>';
 
                     while ($row = $result->fetch_assoc()) {
                         echo '<tr>
-                <td>' . htmlspecialchars($row['id']) . '</td>
-                <td>' . htmlspecialchars($row['user_name']) . '</td> <!-- Display the user name -->
-                <td>' . htmlspecialchars($row['commence_leave_date']) . '</td>
-                <td>' . htmlspecialchars($row['resume_date']) . '</td>
-                <td>';
-
-                        // Check the status and display appropriate text
-                        if ($row['status'] == 0) {
-                            echo '<span style="color: red;">Not submit application yet</span>';
-                        } elseif ($row['status'] == 1) {
-                            echo 'Application Submitted';
-                        } else {
-                            echo htmlspecialchars($row['status']);
-                        }
-
-                        echo '</td>
-                <td>
-                    <a class="btn btn-primary btn-sm" href="viewEmergencyLeave.php?id=' . htmlspecialchars($row['id']) . ' &status=null">View Details</a>
-                </td>
-              </tr>';
+                            <td>' . htmlspecialchars($row['name']) . '</td>
+                            <td>' . htmlspecialchars($row['dept']) . '</td>
+                            <td>' . htmlspecialchars($row['casual_leaves']) . '</td>
+                            <td>' . htmlspecialchars($row['rest_leaves']) . '</td>
+                            <td>' . htmlspecialchars($row['modified_date']) . '</td>
+                            <td>
+                                <button class="btn btn-primary btn-sm update-btn" 
+                                        data-id="' . htmlspecialchars($row['user_id']) . '" 
+                                        data-name="' . htmlspecialchars($row['name']) . '" 
+                                        data-short-leaves="' . htmlspecialchars($row['short_leaves']) . '">
+                                    Update
+                                </button>
+                            </td>
+                          </tr>';
                     }
 
                     echo '</tbody></table>';
@@ -199,39 +195,107 @@ ORDER BY la.id DESC;
                     echo '<div class="alert alert-warning" role="alert">No records found.</div>';
                 }
                 ?>
-            </div>
 
-            <script>
-                document.getElementById('searchInput').addEventListener('keyup', function() {
-                    var input = document.getElementById('searchInput').value.toLowerCase();
-                    var table = document.getElementById('userTable');
-                    var trs = table.getElementsByTagName('tr');
+                <!-- Modal for updating short leaves -->
+                <div class="modal fade" id="updateModal" tabindex="-1" role="dialog" aria-labelledby="updateModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="updateModalLabel">Update Short Leaves</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
 
-                    for (var i = 1; i < trs.length; i++) {
-                        var tds = trs[i].getElementsByTagName('td');
-                        var match = false;
+                            </div>
+                            <div class="modal-body">
+                                <form id="updateForm">
+                                    <div class="form-group">
+                                        <label for="userName">Name</label>
+                                        <input type="text" class="form-control" id="userName" readonly>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="shortLeaves">Input Short Leaves for Current Month</label>
+                                        <input type="number" class="form-control" id="shortLeaves" name="short_leaves" min="0">
+                                    </div>
+                                    <input type="hidden" id="userId">
+                                    <button type="button" class="btn btn-primary" id="saveChanges">Update</button>
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                        for (var j = 0; j < tds.length; j++) {
-                            if (tds[j].innerText.toLowerCase().indexOf(input) > -1) {
-                                match = true;
-                                break;
+
+                <script>
+                    document.getElementById('searchInput').addEventListener('keyup', function() {
+                        var input = document.getElementById('searchInput').value.toLowerCase();
+                        var table = document.getElementById('userTable');
+                        var trs = table.getElementsByTagName('tr');
+
+                        for (var i = 1; i < trs.length; i++) {
+                            var tds = trs[i].getElementsByTagName('td');
+                            var match = false;
+
+                            for (var j = 0; j < tds.length; j++) {
+                                if (tds[j].innerText.toLowerCase().indexOf(input) > -1) {
+                                    match = true;
+                                    break;
+                                }
                             }
+
+                            trs[i].style.display = match ? '' : 'none';
                         }
+                    });
 
-                        trs[i].style.display = match ? '' : 'none';
-                    }
-                });
+                    // Handle the opening of the modal with the correct user data
+                    // Handle the opening of the modal with the correct user data
+                    document.querySelectorAll('.update-btn').forEach(button => {
+                        button.addEventListener('click', function() {
+                            const userId = this.getAttribute('data-id');
+                            const userName = this.getAttribute('data-name');
+                            const shortLeaves = this.getAttribute('data-short-leaves');
 
-                function confirmDelete(id) {
-                    if (confirm("Are you sure you want to delete this record?")) {
-                        window.location.href = 'delete_user.php?id=' + id;
-                    }
-                }
-            </script>
+                            document.getElementById('userId').value = userId;
+                            document.getElementById('userName').value = userName;
+                            document.getElementById('shortLeaves').value = shortLeaves;
+
+                            $('#updateModal').modal('show');
+                        });
+                    });
+
+                    // Handle updating short leaves
+                    document.getElementById('saveChanges').addEventListener('click', function() {
+                        console.log("Save Changes button clicked"); // Debugging line
+                        const userId = document.getElementById('userId').value;
+                        const shortLeaves = document.getElementById('shortLeaves').value;
+
+                        fetch('update_short_leaves.php', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                },
+                                body: `id=${userId}&short_leaves=${shortLeaves}`
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    alert('Short leaves updated successfully!');
+                                    location.reload(); // Reload page to see changes in table
+                                } else {
+                                    alert('Error updating short leaves.');
+                                }
+                            });
+                    });
+
+                    document.querySelector('.btn-secondary').addEventListener('click', function() {
+                        $('#updateModal').modal('hide');
+                    });
+                </script>
+            </div>
+            <!-- partial -->
         </div>
-        <!-- partial -->
-    </div>
-    <!-- main-panel ends -->
+        <!-- main-panel ends -->
     </div>
     <!-- page-body-wrapper ends -->
     </div>

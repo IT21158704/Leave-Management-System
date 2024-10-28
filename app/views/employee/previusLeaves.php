@@ -7,13 +7,13 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Subject Officer') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Employee') {
     header("Location: ../login.php");
     exit();
 }
 
 // $user_id = '38'; // For testing purpose, hardcoded, replace with your logic
-$user_id = $_GET['id'];
+$user_id = $_SESSION['user_id'];
 ?>
 
 <head>
@@ -68,24 +68,10 @@ $user_id = $_GET['id'];
     <div class="container-fluid page-body-wrapper">
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
-
-
                 <li class="nav-item">
-                    <a class="nav-link" href="subject_officer_dashboard.php">
+                    <a class="nav-link" href="employee_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="users.php">
-                        <i class="mdi mdi-account-multiple-outline menu-icon"></i>
-                        <span class="menu-title">Users</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="shortLeavs.php">
-                        <i class="mdi mdi-timelapse menu-icon"></i>
-                        <span class="menu-title">Short Leaves</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -110,6 +96,12 @@ $user_id = $_GET['id'];
                     <a class="nav-link" href="emergencyLeaves.php">
                         <i class="mdi mdi-alert-octagon-outline menu-icon"></i>
                         <span class="menu-title">Emergency Leave</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="userProfile.php">
+                        <i class="icon-paper menu-icon"></i>
+                        <span class="menu-title">All Records</span>
                     </a>
                 </li>
                 <li class="nav-item">

@@ -12,6 +12,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'Admin') {
 }
 
 $nic = $_SESSION['nic'];
+
 ?>
 
 
@@ -97,6 +98,18 @@ $nic = $_SESSION['nic'];
         <!-- partial -->
         <div class="main-panel">
             <div class="content-wrapper">
+                <?php
+                if (isset($_GET['status']) && isset($_GET['message'])) {
+                    $status = htmlspecialchars($_GET['status']);
+                    $message = htmlspecialchars($_GET['message']);
+
+                    if ($status == 'success') {
+                        echo '<div class="alert alert-success" role="alert">' . $message . '</div>';
+                    } elseif ($status == 'error') {
+                        echo '<div class="alert alert-danger" role="alert">' . $message . '</div>';
+                    }
+                }
+                ?>
                 <header>
                     <h3 class="mb-4">
                         Registered Users

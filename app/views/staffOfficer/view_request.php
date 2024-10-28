@@ -116,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $new_casual_leaves = $available_leaves['casual_leaves'] - $leave_dates;
                             $query = "UPDATE available_leaves SET casual_leaves = ? WHERE user_id = ?";
                             $stmt = $conn->prepare($query);
-                            $stmt->bind_param("ii", $new_casual_leaves, $id);
+                            $stmt->bind_param("di", $new_casual_leaves, $id);
                             if ($stmt->execute()) {
                                 $body = leaveConfirmationBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], 'Approved');
                                 sendMail($user['email'], $user['name'], 'Leave Request Status', $body);
@@ -134,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $new_rest_leaves = $available_leaves['rest_leaves'] - $leave_dates;
                             $query = "UPDATE available_leaves SET rest_leaves = ? WHERE user_id = ?";
                             $stmt = $conn->prepare($query);
-                            $stmt->bind_param("ii", $new_rest_leaves, $id);
+                            $stmt->bind_param("di", $new_rest_leaves, $id);
                             if ($stmt->execute()) {
                                 $body = leaveConfirmationBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], 'Approved');
                                 sendMail($user['email'], $user['name'], 'Leave Request Status', $body);
@@ -150,7 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $new_other_leaves = $available_leaves['other_leaves'] + $leave_dates;
                         $query = "UPDATE available_leaves SET other_leaves = ? WHERE user_id = ?";
                         $stmt = $conn->prepare($query);
-                        $stmt->bind_param("ii", $new_other_leaves, $id);
+                        $stmt->bind_param("di", $new_other_leaves, $id);
                         if ($stmt->execute()) {
                             $body = leaveConfirmationBody($user['name'], $application['leaveReason'], $application['commenceLeaveDate'], $application['resumeDate'], 'Approved');
                             sendMail($user['email'], $user['name'], 'Leave Request Status', $body);

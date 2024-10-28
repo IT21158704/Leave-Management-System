@@ -24,6 +24,19 @@ if ($result->num_rows > 0) {
     $rest = $row["rest_leaves"];
 }
 
+$short_leaves = 0;
+$monthName = 'No Short Leaves';
+$sql = "SELECT * FROM short_leaves WHERE user_id = $id";
+$result = $conn->query($sql);
+if ($result->num_rows > 0) {
+    $row = $result->fetch_assoc();
+    $short_leaves = $row["short_leaves"];
+    $dateString = $row["modified_date"];
+    $timestamp = strtotime($dateString);
+    $monthName = date('F', $timestamp);
+}
+
+
 $sql = "SELECT 
             SUM(leaveDates) AS totalLeaveDays,
             SUM(CASE WHEN leaveReason = 'Casual' THEN 1 ELSE 0 END) AS casualLeaveCount,
@@ -203,17 +216,24 @@ if (isset($_POST['generate_pdf'])) {
         <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
-                
-            <li class="nav-item">
-                    <a class="nav-link" href="employee_dashboard.php">
+
+
+                <li class="nav-item">
+                    <a class="nav-link" href="subject_officer_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="users.php">
-                        <i class="mdi mdi-bookmark-outline menu-icon"></i>
+                        <i class="mdi mdi-account-multiple-outline menu-icon"></i>
                         <span class="menu-title">Users</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="shortLeavs.php">
+                        <i class="mdi mdi-timelapse menu-icon"></i>
+                        <span class="menu-title">Short Leaves</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -291,62 +311,83 @@ if (isset($_POST['generate_pdf'])) {
                                 </div>
                             </div>
                         </div>
-
                     </div>
+                </div>
 
 
 
-                    <div class="row">
-                        <div class="col-md-12 grid-margin stretch-card">
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <p class="card-title">Approved leaves</p>
-                                        <div class="d-flex">
-                                            <div class="mb-3 mr-2">
-                                                <select class="btn btn-outline" id="monthPicker">
-                                                    <option value="">Select Month</option>
-                                                    <?php
-                                                    foreach ($months as $number => $name) {
-                                                        echo "<option value='$number'>$name</option>";
-                                                    }
-                                                    ?>
-                                                </select>
-                                            </div>
+                <div class="row">
+                    <div class="col-md-12 grid-margin stretch-card">
+                        <div class="card">
+                            <div class="card-body">
+                                <!-- Flexbox container for title and button -->
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <p class="card-title">Short Leaves in last month</p>
+                                    <a class="btn btn-link btn-sm" href="previusShortLeaves.php?id=<?php echo $id; ?>">Short Leave History (Previous Months)</a>
+                                </div>
 
-                                            <div class="mb-3 mr-2">
-                                                <select class="btn btn-outline" id="yearPicker">
-                                                    <option value="">Select Year</option>
-                                                    <?php
-                                                    $currentYear = date("Y");
-                                                    for ($i = $currentYear; $i >= 2020; $i--) {
-                                                        echo "<option value='$i'>$i</option>";
-                                                    }
-                                                    ?>
-                                                </select>
-                                            </div>
-                                            <div class="mb-3">
-                                                <form method="POST">
-                                                    <button class="btn btn-outline-info btn-icon-text" name="generate_pdf"> Print PDF <i class="ti-printer btn-icon-append"></i></button>
-                                                </form>
-                                            </div>
+                                <div class="d-flex flex-wrap">
+                                    <div class="me-5 mt-3">
+                                        <p class="text-muted"><?php echo htmlspecialchars($monthName); ?></p>
+                                        <h3 class="text-primary fs-30 font-weight-medium"><?php echo htmlspecialchars($short_leaves); ?></h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 grid-margin stretch-card">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <p class="card-title">Approved leaves</p>
+                                    <div class="d-flex">
+                                        <div class="mb-3 mr-2">
+                                            <select class="btn btn-outline" id="monthPicker">
+                                                <option value="">Select Month</option>
+                                                <?php
+                                                foreach ($months as $number => $name) {
+                                                    echo "<option value='$number'>$name</option>";
+                                                }
+                                                ?>
+                                            </select>
+                                        </div>
+
+                                        <div class="mb-3 mr-2">
+                                            <select class="btn btn-outline" id="yearPicker">
+                                                <option value="">Select Year</option>
+                                                <?php
+                                                $currentYear = date("Y");
+                                                for ($i = $currentYear; $i >= 2020; $i--) {
+                                                    echo "<option value='$i'>$i</option>";
+                                                }
+                                                ?>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <form method="POST">
+                                                <button class="btn btn-outline-info btn-icon-text" name="generate_pdf"> Print PDF <i class="ti-printer btn-icon-append"></i></button>
+                                            </form>
                                         </div>
                                     </div>
+                                </div>
 
 
-                                    <div class="d-flex flex-wrap">
-                                        <div class="col-md-12">
+                                <div class="d-flex flex-wrap">
+                                    <div class="col-md-12">
 
-                                            <?php
-                                            // Fetch data from database
-                                            $query = "SELECT * FROM leave_applications WHERE user_id = $id AND status = 'approved'
+                                        <?php
+                                        // Fetch data from database
+                                        $query = "SELECT * FROM leave_applications WHERE user_id = $id AND status = 'approved'
                 ORDER BY id DESC;";
-                                            $result = $conn->query($query);
+                                        $result = $conn->query($query);
 
-                                            if ($result->num_rows > 0) {
-                                                echo '<div class="table-responsive">';
-                                                echo '<table class="table table-striped table-hover table-bordered" id="userTable">';
-                                                echo '<thead class="thead-dark">
+                                        if ($result->num_rows > 0) {
+                                            echo '<div class="table-responsive">';
+                                            echo '<table class="table table-striped table-hover table-bordered" id="userTable">';
+                                            echo '<thead class="thead-dark">
     <tr>
         <th scope="col">Leave ID</th>
         <th scope="col">Date</th>
@@ -357,8 +398,8 @@ if (isset($_POST['generate_pdf'])) {
   </thead>
   <tbody>';
 
-                                                while ($row = $result->fetch_assoc()) {
-                                                    echo '<tr>
+                                            while ($row = $result->fetch_assoc()) {
+                                                echo '<tr>
         <td>' . htmlspecialchars($row['id']) . '</td>
         <td>' . htmlspecialchars($row['submissionDate']) . '</td>
         <td>' . htmlspecialchars($row['leaveDates']) . '</td>
@@ -367,28 +408,28 @@ if (isset($_POST['generate_pdf'])) {
             <a class="btn btn-success btn-sm" href="filled_application.php?id=' . htmlspecialchars($row['id']) . '">View</a>
         </td>
       </tr>';
-                                                }
-
-                                                echo '</tbody></table>';
-                                                echo '</div>';
-                                            } else {
-                                                echo '<div class="alert alert-warning" role="alert">No records found.</div>';
                                             }
-                                            ?>
+
+                                            echo '</tbody></table>';
+                                            echo '</div>';
+                                        } else {
+                                            echo '<div class="alert alert-warning" role="alert">No records found.</div>';
+                                        }
+                                        ?>
 
 
-                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
                 </div>
             </div>
-            <!-- partial -->
         </div>
-        <!-- main-panel ends -->
+    </div>
+    <!-- partial -->
+    </div>
+    <!-- main-panel ends -->
     </div>
     <!-- page-body-wrapper ends -->
     </div>
