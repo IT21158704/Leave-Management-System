@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $error_message = 'Invalid password';
         }
     } else {
-        $error_message = 'No user found with that nic';
+        $error_message = 'No user found with that NIC';
     }
     $stmt->close();
 }
@@ -94,7 +94,7 @@ $conn->close();
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css">
     <style>
         body {
-            background-image: url('../assets//images/bg.jpg');
+            background-image: url('../assets/images/bg.jpg');
             background-size: cover;
             background-repeat: no-repeat;
             background-position: center;
@@ -140,6 +140,22 @@ $conn->close();
             display: block;
             margin: 0 auto 20px;
             width: 80px;
+        }
+
+        /* Responsive styling */
+        @media (max-width: 576px) {
+            .login-card {
+                width: 90%;
+                padding: 10px;
+            }
+
+            .login-header, .login-body {
+                padding: 15px;
+            }
+
+            .login-header h3, .login-header h5 {
+                font-size: 1.2rem;
+            }
         }
     </style>
 </head>

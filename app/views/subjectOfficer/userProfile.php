@@ -523,7 +523,7 @@ if (isset($_POST['generate_pdf'])) {
         document.getElementById('monthPicker').addEventListener('change', filterTable);
         document.getElementById('generateReport').addEventListener('click', generateReport);
     </script>
-
+    <script src="../../assets/js/template.js"></script>
 
 
 </body>

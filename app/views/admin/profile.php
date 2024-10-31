@@ -133,11 +133,7 @@ if ($result->num_rows > 0) {
     </div>
     <!-- page-body-wrapper ends -->
     </div>
-    <!-- container-scroller -->
-    <!-- plugins:js -->
     <script src="../../assets/vendors/js/vendor.bundle.base.js"></script>
-    <!-- endinject -->
-    <!-- Plugin js for this page -->
     <script src="../../assets/vendors/chart.js/chart.umd.js"></script>
     <script src="../../assets/vendors/datatables.net/jquery.dataTables.js"></script>
     <script src="../../assets/vendors/datatables.net-bs5/dataTables.bootstrap5.js"></script>

@@ -100,6 +100,12 @@ $user_id = $_SESSION['user_id'];
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="userProfile.php">
+                        <i class="icon-paper menu-icon"></i>
+                        <span class="menu-title">All Records</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="profile.php">
                         <i class="icon-head menu-icon"></i>
                         <span class="menu-title">Profile</span>
@@ -136,7 +142,8 @@ FROM leave_applications la
 JOIN request_status rs ON rs.leave_application_id = la.id
 JOIN users u ON JSON_CONTAINS(u.staff, JSON_QUOTE(CAST('$user_id' AS CHAR)), '$')
 WHERE la.status != 'pending'
-  AND rs.replacement_status = 'Approved';
+  AND rs.replacement_status = 'Approved'
+ORDER BY la.id DESC;
 ";
 
 

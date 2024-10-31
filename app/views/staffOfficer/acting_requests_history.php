@@ -62,7 +62,7 @@ $user_id = $_SESSION['user_id'];
         <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
-            <li class="nav-item">
+                <li class="nav-item">
                     <a class="nav-link" href="staff_officer_dashboard.php">
                         <i class="icon-grid menu-icon"></i>
                         <span class="menu-title">Home</span>
@@ -96,6 +96,12 @@ $user_id = $_SESSION['user_id'];
                     <a class="nav-link" href="emergencyLeaves.php">
                         <i class="mdi mdi-alert-octagon-outline menu-icon"></i>
                         <span class="menu-title">Emergency Leave</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="userProfile.php">
+                        <i class="icon-paper menu-icon"></i>
+                        <span class="menu-title">All Records</span>
                     </a>
                 </li>
                 <li class="nav-item">
